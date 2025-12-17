@@ -1,0 +1,27 @@
+data_source:
+  base_url: "https://magyar.bolyaiverseny.hu/verseny/archivum/eredmenyek.php"
+  subject: "Anyanyelv"
+  grades: [3, 4, 5, 6, 7, 8]
+  rounds: ["írásbeli döntő"] # Final list to be confirmed
+
+scraping:
+  delay_seconds: 5
+  timeout_seconds: 30
+  max_retries: 3
+  headless: True
+  user_agent: "Bolyai-Competition-Scraper/1.0"
+  selectors:
+    year_dropdown: "#verseny_eve"
+    grade_dropdown: "#verseny_evfolyam"
+    round_dropdown: "#verseny_fordulo"
+    results_table: "#middle > table > tbody > tr > td > table" # Example
+
+paths:
+  data_dir: "data"
+  raw_html_dir: "data/raw_html"
+  processed_csv_dir: "data/processed_csv"
+  report_dir: "data/analysis_templates"
+  master_csv: "data/master_bolyai_anyanyelv.csv"
+  validation_report: "data/validation_report.json"
+  log_file: "data/pipeline.log"
+  template_file: "templates/report_template.xlsx"
