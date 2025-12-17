@@ -10,6 +10,7 @@ Follow the steps described in the step-by-step breakdown and design documents.
 Only implement one step at a time.
 Progress one-by-one.
 Make sure the current step is ready before starting the next one.
+See existing step4-coding-summary-xxx.md files for the completed steps.
 
 ## This is our high level workflow:
 1: you implement the next step based on the breakdown plan and let me know when you are ready
@@ -75,3 +76,10 @@ Use above rules only for newly added/modified code, do not try to update the who
 
 Do not make any changes, until you have 95% confidence that you know what to build.
 Ask me follow up questions until you have that confidence.
+
+Remember to follow our established workflow precisely:
+1. Execute the implementation step.
+2. Await my review and confirmation.
+3. Create the coding summary file for the step.
+4. Await my review and confirmation of the summary.
+5. Only then can you ask to proceed to the next step.
