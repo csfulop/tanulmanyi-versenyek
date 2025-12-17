@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<!-- saved from url=(0063)https://magyar.bolyaiverseny.hu/verseny/archivum/eredmenyek.php -->
+<html lang="hu"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="keywords" content="Bolyai Anyanyelvi Csapatverseny" ,="" "csapatverseny",="" "verseny",="" "anyanyelv",="" "bolyai"="">
+    <meta http-equiv="Reply-to" content="info@bolyaiverseny.hu">
+    <meta name="description" content="A Bolyai Anyanyelvi Csapatverseny honlapja.">
+
+    <title>Bolyai Anyanyelvi Csapatverseny</title>
+    <link rel="icon" type="image/x-icon" href="https://magyar.bolyaiverseny.hu/favicon.ico">
+
+    <link rel="stylesheet" href="./Bolyai Anyanyelvi Csapatverseny_files/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+    <link href="./Bolyai Anyanyelvi Csapatverseny_files/css2" rel="stylesheet"> 
+    <link rel="stylesheet" href="./Bolyai Anyanyelvi Csapatverseny_files/font-awesome.min.css">
+
+    <script src="./Bolyai Anyanyelvi Csapatverseny_files/jquery.min.js"></script>
+    <script src="./Bolyai Anyanyelvi Csapatverseny_files/app.js" defer=""></script>
+    <script type="text/javascript">
+        function getYearsForSelect() {
+            $.ajax({ 
+                url: "search/year.php", 
+                success: function(result) {
+                    let years = JSON.parse(result);
+
+                    $.each(years, function (item, zone) {
+                        $('#year').append($('<option>', { 
+                            value: zone.ev,
+                            text : zone.ev 
+                        }));
+                    });
+                }
+            });
+        }
+
+        function getCompetitionForSelect(year) {
+            $.ajax({ 
+                url: "search/competition.php", 
+                type: "POST",
+                dataType: "json",
+                data: { 
+                    year: year,
+                },
+                success: function(result) {
+                    var competitions = result;
+
+                    $('#competition option').remove();
+                    $('#competition').append($('<option>', { 
+                        value: '',
+                        text : '-- Kérjük válasszon! --' 
+                    }));
+
+                    $.each(competitions, function (item, competition) {
+                        $('#competition').append($('<option>', { 
+                            value: competition.evf,
+                            text : competition.evf 
+                        }));
+                    });
+                }
+            });
+        }
+
+        function getRoundForSelect(year, competition) {
+            $.ajax({ 
+                url: "search/round.php", 
+                type: "POST",
+                dataType: "json",
+                data: { 
+                    year: year,
+                    competition: competition
+                },
+                success: function(result) {
+                    var rounds = result;
+
+                    $('#round option').remove();
+                    $('#round optgroup').remove();
+
+                    $('#round').append($('<option>', { 
+                        value: '',
+                        text : '-- Kérjük válasszon! --' 
+                    }));
+
+                    var optionGroup = $("<optgroup label='Körzeti forduló'></optgroup>");
+                
+                    $.each(rounds, function (item, round) {
+                        
+                        if(round.fordulo_sorrend > 0) {
+                            $('#round').append($('<option>', { 
+                                value: round.fordulo,
+                                text : round.fordulo
+                            }));
+                        }
+                        else {
+                            optionGroup.append($('<option>', { 
+                                value: round.fordulo,
+                                text : round.fordulo
+                            }));
+                        }
+                    });
+
+                    $("#round").append(optionGroup);
+                }
+            });
+        }
+
+        function getTeams(year, round, competition) {
+            $.ajax({ 
+                url: "search/results.php", 
+                type: "POST",
+                dataType: "json",
+                data: { 
+                    year: year,
+                    round: round,
+                    competition: competition
+                },
+                success: function(result) {
+                    var teams = result;
+
+                    $("#teams").empty();
+
+                    $.each(teams, function(index, item) {
+                        var row = $("<tr></tr>");
+
+                        if(item.tovabbjuto == 1) row.append("<td class='text-center'>" + item.helyezes + ".<br><span class='fw-bold'>döntős</span></td>");
+                        else row.append("<td class='text-center'>" + item.helyezes + ".</td>");
+                        
+                        row.append("<td>" + item.csapnev + "</td>");
+                        row.append("<td>" + item.isknev + "<br>" + item.varos + "</td>");
+                        row.append("<td class='text-center'>" + item.pont + "</td>");
+
+                        $("#teams").append(row);
+                    });
+
+                    $("#r_year").text(year);
+                    $("#r_round").text(round);
+                    $("#r_competition").text(competition);
+                    showResults()
+                }
+            });
+        }
+
+        function disableRoundSelect() {
+            $('#round').val('').change()
+            $('#round').prop('disabled', true);
+        }
+
+        function enableRoundSelect() {
+            $('#round').prop('disabled', false);
+            $('#round').focus();
+        }
+
+        function disableCompetitionSelect() {
+            $('#competition').val('').change()
+            $('#competition').prop('disabled', true);
+        }
+
+        function enableCompetitionSelect() {
+            $('#competition').prop('disabled', false);
+            $('#competition').focus();
+        }
+
+        function hideResults() {
+            $("#results").hide();
+        }
+
+        function showResults() {
+            $("#results").show();
+        }
+
+
+        $(document).ready(function() {
+
+            hideResults()
+            getYearsForSelect()
+        
+            $('#year').on('change', function() {
+                let year = $('#year').val()
+
+                disableCompetitionSelect();
+                disableRoundSelect()
+                hideResults()
+
+                if(year != ''){
+                    getCompetitionForSelect(year)
+                    enableCompetitionSelect()
+                }
+            });
+
+            $('#competition').on('change', function() {
+                var year = $('#year').val()
+                var competition = $('#competition').val()
+
+                hideResults()
+                disableRoundSelect()
+
+                if(competition != ''){
+                    getRoundForSelect(year, competition)
+                    enableRoundSelect()
+                }
+            });
+
+            $('#round').on('change', function() {
+                var year = $('#year').val()
+                var competition = $('#competition').val()
+                var round = $('#round').val()
+
+                hideResults()
+
+                if(round != ''){
+                    getTeams(year, round, competition)
+                }
+            });
+
+        });
+    </script>
+</head>
+<body>
+
+    <header><div class="container-wide fw-bold fs-300">
+    <div class="datebar-wrapper">
+        <div class="header-dates">
+            <span>
+                Nevezési határidő: <span class="text-primary-500" data-variable="nevezesi_hatarido">2025. 10. 01.</span>
+            </span>
+            &nbsp;&nbsp;
+            <span>
+                Körzeti forduló: <span class="text-primary-500" data-variable="korzeti_fordulo">2025. 11. 07.</span>
+            </span>
+            &nbsp;&nbsp;
+            <span>
+                Írásbeli Döntő: <span class="text-primary-500" data-variable="irasbeli_donto">2025. 11. 21.</span>
+            </span>
+            &nbsp;&nbsp;
+            <span>
+                Szóbeli Döntő: <span class="text-primary-500" data-variable="szobeli_donto">2025. 12. 13.</span>
+            </span>
+        </div>
+
+        <div class="dropdown" data-dropdown="">
+            <a href="https://magyar.bolyaiverseny.hu/verseny/archivum/eredmenyek.php#" onclick="return false" data-dropdown-button="">
+                További versenyek <i data-dropdown-button="" class="fa fa-chevron-down"></i>
+            </a>
+                
+            <div class="dropdown-content">
+                <a class="link" href="https://www.bolyaiverseny.hu/magyar912">Anyanyelvi 9-12.</a>
+                <a class="link" href="https://www.bolyaiverseny.hu/matek">Matematika 3-8.</a>
+                <a class="link" href="https://www.bolyaiverseny.hu/matek912">Matematika 9-12</a>
+                <a class="link" href="https://www.bolyaiverseny.hu/termtud">Természettudományi</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="nav-background">
+    <div class="nav-shadow">
+        <div class="container-wide">
+            <div class="nav-wrapper">
+                <div>
+                    <a class="nav-logo" href="https://magyar.bolyaiverseny.hu/">
+                        <div>Bolyai Anyanyelvi</div>
+                        <div>Csapatverseny</div>
+                        <div>3-8. osztály</div>
+                    </a>
+                </div>
+    
+                <div>
+                    <button class="mobile-nav-toggle" aria-controls="primary-navigation" aria-expanded="false">
+                        <i class="fa fa-bars"></i>
+                        <span class="fs-400">Menü</span>
+                    </button>
+                </div>
+
+
+                <nav class="primary-navigation">
+                    <button class="mobile-nav-toggle text-neutral-900" aria-controls="primary-navigation" aria-expanded="false">
+                        <i class="fa fa-close"></i>
+                        <span class="fs-400">Menü</span>
+                    </button>
+                    <ul class="menu" role="list">
+                        <li data-dropdown="">
+                            <div data-dropdown-button="">
+                                A Versenyről <i data-dropdown-button="" class="fa fa-chevron-down"></i>
+                            </div>                            
+                            <ul role="list">
+                                <li><a class="link" href="https://magyar.bolyaiverseny.hu/verseny/info/kiiras.php">Versenykiírás 25-26</a></li>
+                                <li><a class="link" href="https://magyar.bolyaiverseny.hu/verseny/info/korzetek.php">Körzetek</a></li>
+                                <li><a class="link" href="https://magyar.bolyaiverseny.hu/verseny/info/gyik.html">GYIK</a></li>
+                                <li><a class="link" href="https://magyar.bolyaiverseny.hu/verseny/info/szervezok.html">Szervezők</a></li>
+                                <li><a class="link" href="https://magyar.bolyaiverseny.hu/verseny/info/tamogatok.html">Támogatók</a></li>
+                            </ul>
+                        </li>
+                        <li data-dropdown="">
+                            <div data-dropdown-button="">
+                                Körzeti forduló <i data-dropdown-button="" class="fa fa-chevron-down"></i>
+                            </div> 
+                            <ul role="list">
+                                <li><a class="link" href="https://magyar.bolyaiverseny.hu/verseny/korzeti/csapatok.php">Nevezett csapatok</a></li>
+                                <li><a class="link" href="https://magyar.bolyaiverseny.hu/verseny/feladatok.php">Feladatok-megoldások</a></li>
+                                <li><a class="link" href="https://magyar.bolyaiverseny.hu/verseny/korzeti/eredmeny.php">Eredmények</a></li>  
+                                <li><a class="link" href="https://magyar.bolyaiverseny.hu/verseny/korzeti/dijatadok.php">Díjátadók</a></li>
+                                <li><a class="link" href="https://magyar.bolyaiverseny.hu/verseny/korzeti/dijazottak.php">Díjazottak</a></li>
+                            </ul>
+                        </li>
+                        <li data-dropdown="">
+                            <div data-dropdown-button="">
+                                Írásbeli döntő <i data-dropdown-button="" class="fa fa-chevron-down"></i>
+                            </div>                        
+                            <ul role="list">
+                                <li><a class="link" href="https://magyar.bolyaiverseny.hu/verseny/donto/info.php">Tudnivalók</a></li>
+                                <li><a class="link" href="https://magyar.bolyaiverseny.hu/verseny/donto/donto-csapatok.php">Résztvevő csapatok</a></li>
+                                <li><a class="link" href="https://magyar.bolyaiverseny.hu/verseny/feladatok.php">Feladatok-megoldások</a></li>
+                                <li><a class="link" href="https://magyar.bolyaiverseny.hu/verseny/donto/eredmeny.php">Eredmények</a></li>
+                            </ul>
+                        </li>
+                        <li data-dropdown="">
+                            <div data-dropdown-button="">
+                                Szóbeli döntő <i data-dropdown-button="" class="fa fa-chevron-down"></i>
+                            </div>                         
+                            <ul role="list">
+                                <li><a class="link" href="https://magyar.bolyaiverseny.hu/verseny/szobeli/info.php">Tudnivalók</a></li>
+                                <li><a class="link" href="https://magyar.bolyaiverseny.hu/verseny/szobeli/csapatok.php">Szóbeli sorrend</a></li>
+                                <li><a class="link" href="https://magyar.bolyaiverseny.hu/verseny/feladatok.php">Feladatok-megoldások</a></li>
+                                <li><a class="link" href="https://magyar.bolyaiverseny.hu/verseny/szobeli/eredmeny.php">Eredmények</a></li> 
+                            </ul>
+                        </li>
+                        <li data-dropdown="">
+                            <div data-dropdown-button="">
+                                Archívum <i data-dropdown-button="" class="fa fa-chevron-down"></i>
+                            </div>                             
+                            <ul role="list">
+                                <li><a class="link" href="https://magyar.bolyaiverseny.hu/verseny/archivum/feladatok.php">Feladatok</a></li>
+                                <li><a class="link" href="https://magyar.bolyaiverseny.hu/verseny/archivum/eredmenyek.php">Eredmények</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="https://bolyaiverseny.hu/konyv">Könyvek</a></li>
+                        <li><button class="button" onclick="location.href=&#39;/nevezes&#39;">Nevezés</button></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(document).on("click", event => {
+        //Dropdown
+        const isDropdownButton = event.target.matches("[data-dropdown-button]")
+        if (!isDropdownButton && event.target.closest("[data-dropdown]") != null) return
+        
+        let currentDropdown
+        if (isDropdownButton) {
+          currentDropdown = event.target.closest("[data-dropdown]")
+          currentDropdown.classList.toggle("active")
+        }
+        
+        $("[data-dropdown].active").each( (index, element) => {
+          if (element === currentDropdown) return
+          element.classList.remove("active")
+        })
+      
+      
+        // Mobile Nav Toggle
+        let primaryNavigation = $(".primary-navigation");
+        if (!primaryNavigation.is(event.target) && !primaryNavigation.has(event.target).length) {
+          if($(".mobile-nav-toggle").is(":visible")) primaryNavigation.hide();
+        }
+      
+        let toggle = $(".mobile-nav-toggle");
+        if (toggle.is(event.target) || toggle.has(event.target).length) {
+          primaryNavigation.toggle()
+        }
+      })
+</script></header>
+
+    <main>
+        <section class="container">
+            <h1>Korábbi évek eredményei</h1>
+
+            <div class="row">
+                <div>
+                    <label for="year">Tanév</label><br>
+                    <select name="year" id="year">
+                        <option value="">--  Kérjük válasszon! --</option>
+                    <option value="2015-16">2015-16</option><option value="2016-17">2016-17</option><option value="2017-18">2017-18</option><option value="2018-19">2018-19</option><option value="2019-20">2019-20</option><option value="2020-21">2020-21</option><option value="2021-22">2021-22</option><option value="2022-23">2022-23</option><option value="2023-24">2023-24</option><option value="2024-25">2024-25</option></select>
+                </div>
+                <div>
+                    <label for="competition">Évfolyam</label><br>
+                    <select name="competition" id="competition" disabled="">
+                        <option value="">--  Kérjük válasszon! --</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="round">Forduló</label><br>
+                    <select name="round" id="round" disabled="">
+                        <option value="">--  Kérjük válasszon! --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="results" style="display: none;">
+
+                <br>
+                <h3>A <span id="r_year"></span>. évi <span id="r_competition"></span> <span id="r_round"></span> forduló eredményei</h3>
+                <br>
+
+                <div class="row table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <td>Helyezés</td>
+                                <td>Csapatnév</td>
+                                <td>Iskola</td>
+                                <td>Pontszám</td>
+                            </tr>
+                        </thead>
+                        <tbody id="teams"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer><div class="container-wide">
+    <div class="row">
+        <div class="footer-col">
+            <h3 class="text-left">A verseny fővédnökei:</h3>
+            <div>
+                <div class="fs-400 fw-bold">Prof. Dr. Freund Tamás</div>
+                <div class="fs-300 text-neutral-400">a Magyar Tudományos Akadémia elnöke</div>
+            </div>
+            <div>
+                <div class="fs-400 fw-bold">Dr. Aáry-Tamás Lajos</div>
+                <div class="fs-300 text-neutral-400">az Oktatási Jogok Biztosa</div>
+            </div>
+        </div>
+        <div class="footer-col">
+            <h3 class="text-left">Nevezés</h3>
+            <div class="fs-300 text-neutral-400">Nevezni a tanárok tudnak az internetes felületen keresztül.</div>
+            <div>
+                <a href="https://magyar.bolyaiverseny.hu/nevezes" class="button">Nevezés</a>
+            </div>
+        </div>
+        <div class="footer-col">
+            <h3 class="text-left">Kapcsolat</h3>
+            <div class="fs-400 text-neutral-400">
+                <i class="fa fa-envelope"></i>&nbsp;&nbsp;info@bolyaiverseny.hu
+            </div>
+            <div class="fs-400 text-neutral-400">
+                <i class="fa fa-phone"></i>&nbsp;&nbsp;+36 30 440 6870 
+            </div>
+            <div class="fs-400 text-neutral-400">
+                <i class="fa fa-map-marker"></i>&nbsp;&nbsp;1037 Budapest, Patakvölgyi lejtő 20813/3. hrsz 
+            </div>
+        </div>
+        <div class="footer-col">
+            <a target="_blank" href="https://hu.wikipedia.org/wiki/Bolyai_J%C3%A1nos">Bolyai János élete</a>
+            <a target="_blank" href="https://hu.wikipedia.org/wiki/Bolyai_Farkas">Bolyai Farkas élete</a>
+            <a target="_blank" href="https://hu.wikipedia.org/wiki/Hiperbolikus_geometria">Bolyai Geometria</a>
+            <a href="https://magyar.bolyaiverseny.hu/verseny/info/gyik.html">Gyakran Ismételt Kérdések</a>
+            <a href="https://bolyaiverseny.hu/konyv">Könyvek</a>
+            <a href="https://magyar.bolyaiverseny.hu/verseny/info/kiiras.html">Versenykiírás</a>
+        </div>
+    </div>
+</div>
+    
+<div class="footer-divider"></div>
+<div class="footer-row container-wide">
+    <div>
+        <h3>Bolyai Anyanyelvi Csapatverseny</h3>
+        <div>© Minden jog fenntartva - Alapítva 2004</div>
+    </div>
+    <div>
+        <a href="https://www.bolyaiverseny.hu/">Bolyai Kezdőlap</a>
+        <a href="https://www.bolyaiverseny.hu/osszkep/index.php">Az Összedolgozási Képesség Fejlesztéséért Alapítvány</a>
+        <a href="https://www.bolyaiverseny.hu/adatkezeles.php">Adatkezelési tájékoztató</a>
+    </div>
+</div>
+<div class="overlay"></div></footer>
+
+</body></html>
