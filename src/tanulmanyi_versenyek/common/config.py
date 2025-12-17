@@ -8,7 +8,7 @@ def get_config():
     Loads and parses the config.yaml file.
     The configuration is cached to ensure it's loaded only once.
     """
-    config_path = os.path.join(os.path.dirname(__file__), '..', '..', 'config.yaml')
+    config_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'config.yaml')
     config_path = os.path.abspath(config_path)
 
     if not os.path.exists(config_path):
