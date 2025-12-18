@@ -86,16 +86,30 @@ class WebsiteDownloader:
             self.logger.error(f"Failed to get available years: {e}")
             raise
 
-    def get_html_for_combination(self, year: str, grade: str, round_name: str) -> str | None:
+    def wait_for_dropdown_populated(self, selector: str, timeout: int = 5000):
+        """Wait for a dropdown to be populated with non-empty options."""
+        self.page.wait_for_function(
+            f"document.querySelectorAll('{selector} option[value]:not([value=\"\"])').length > 0",
+            timeout=timeout
+        )
+
+    def get_available_options(self, selector: str) -> list[str]:
+        """Get available option values from a dropdown."""
+        options = []
+        option_elements = self.page.locator(f"{selector} option").all()
+        for option in option_elements:
+            value = option.get_attribute("value")
+            if value and value != "":
+                options.append(value)
+        return options
+
+    def get_html_for_combination(self, year: str, grade_value: str, round_name: str) -> str | None:
         """
         Navigates a web page, selects options from dropdowns, and returns the page's HTML.
 
-        This method attempts to select the specified year, grade, and round on the page,
-        handling network activity and retries.
-
         Args:
             year: The year to select in the dropdown.
-            grade: The grade to select in the dropdown.
+            grade_value: The full grade value to select (e.g., "8. osztály - általános iskolai kategória").
             round_name: The name of the round to select.
 
         Returns:
@@ -112,41 +126,46 @@ class WebsiteDownloader:
         round_selector = selectors['round_dropdown']
 
         for attempt in range(max_retries):
-            self.logger.info(f"Attempt {attempt + 1}/{max_retries} for {year}, grade {grade}, round '{round_name}'")
+            self.logger.info(f"Attempt {attempt + 1}/{max_retries} for {year}, grade '{grade_value}', round '{round_name}'")
             try:
-                # Use a fresh page for each attempt to avoid stale states
                 if self.page:
                     self.page.close()
                 self.page = self.context.new_page()
                 
                 self.page.goto(base_url, timeout=timeout, wait_until='networkidle')
 
-                self.logger.debug(f"Selecting year: {year}")
                 self.page.select_option(year_selector, year)
-                self.page.wait_for_load_state('networkidle', timeout=timeout)
+                self.wait_for_dropdown_populated(grade_selector, timeout)
 
-                self.logger.debug(f"Selecting grade: {grade}")
-                self.page.select_option(grade_selector, str(grade))
-                self.page.wait_for_load_state('networkidle', timeout=timeout)
+                available_grades = self.get_available_options(grade_selector)
+                if grade_value not in available_grades:
+                    self.logger.warning(f"Grade '{grade_value}' not available for year {year}. Available: {available_grades}")
+                    return None
 
-                self.logger.debug(f"Selecting round: {round_name}")
+                self.page.select_option(grade_selector, grade_value)
+                self.wait_for_dropdown_populated(round_selector, timeout)
+
+                available_rounds = self.get_available_options(round_selector)
+                if round_name not in available_rounds:
+                    self.logger.warning(f"Round '{round_name}' not available for year {year}, grade '{grade_value}'. Available: {available_rounds}")
+                    return None
+
                 self.page.select_option(round_selector, round_name)
                 self.page.wait_for_load_state('networkidle', timeout=timeout)
                 
-                # A polite delay before scraping
                 time.sleep(delay)
 
                 html_content = self.page.content()
-                self.logger.info(f"Successfully retrieved HTML for {year}, grade {grade}, round '{round_name}'")
+                self.logger.info(f"Successfully retrieved HTML for {year}, grade '{grade_value}', round '{round_name}'")
                 return html_content
 
             except Exception as e:
                 self.logger.warning(
-                    f"An error occurred on attempt {attempt + 1} for {year}, grade {grade}, round '{round_name}': {e}"
+                    f"An error occurred on attempt {attempt + 1} for {year}, grade '{grade_value}', round '{round_name}': {e}"
                 )
                 if attempt + 1 == max_retries:
                     self.logger.error(
-                        f"Failed to get HTML for {year}, grade {grade}, round '{round_name}' after {max_retries} attempts."
+                        f"Failed to get HTML for {year}, grade '{grade_value}', round '{round_name}' after {max_retries} attempts."
                     )
                     return None
         return None
