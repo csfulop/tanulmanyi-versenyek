@@ -10,7 +10,6 @@ Follow the steps described in the step-by-step breakdown and design documents.
 Only implement one step at a time.
 Progress one-by-one.
 Make sure the current step is ready before starting the next one.
-See existing step4-coding-summary-xxx.md files for the completed steps.
 
 ## This is our high level workflow:
 1: you implement the next step based on the breakdown plan and let me know when you are ready
@@ -83,3 +82,8 @@ Remember to follow our established workflow precisely:
 3. Create the coding summary file for the step.
 4. Await my review and confirmation of the summary.
 5. Only then can you ask to proceed to the next step.
+
+See existing step4-coding-summary-xxx.md files for the completed steps.
+Review these files to get familiar with previous key learnings and takeaways to avoid similar mistakes in the future.
+Before starting anything I want you to read all of the previous summary files, see the important key learnings and takeaways
+and any information that could be useful for the the remaining implementation steps of this project and summarize them for me. 
