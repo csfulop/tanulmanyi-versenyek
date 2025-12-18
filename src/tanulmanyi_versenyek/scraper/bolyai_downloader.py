@@ -1,4 +1,5 @@
 import logging
+import time
 from playwright.sync_api import sync_playwright, Page, BrowserContext, Browser
 from tanulmanyi_versenyek.common.config import get_config
 
@@ -84,3 +85,68 @@ class WebsiteDownloader:
         except Exception as e:
             self.logger.error(f"Failed to get available years: {e}")
             raise
+
+    def get_html_for_combination(self, year: str, grade: str, round_name: str) -> str | None:
+        """
+        Navigates a web page, selects options from dropdowns, and returns the page's HTML.
+
+        This method attempts to select the specified year, grade, and round on the page,
+        handling network activity and retries.
+
+        Args:
+            year: The year to select in the dropdown.
+            grade: The grade to select in the dropdown.
+            round_name: The name of the round to select.
+
+        Returns:
+            The HTML content of the page after selections, or None if it fails after retries.
+        """
+        base_url = self.config['data_source']['base_url']
+        max_retries = self.config['scraping']['max_retries']
+        timeout = self.config['scraping']['timeout_seconds'] * 1000
+        delay = self.config['scraping']['delay_seconds']
+
+        selectors = self.config['scraping']['selectors']
+        year_selector = selectors['year_dropdown']
+        grade_selector = selectors['grade_dropdown']
+        round_selector = selectors['round_dropdown']
+
+        for attempt in range(max_retries):
+            self.logger.info(f"Attempt {attempt + 1}/{max_retries} for {year}, grade {grade}, round '{round_name}'")
+            try:
+                # Use a fresh page for each attempt to avoid stale states
+                if self.page:
+                    self.page.close()
+                self.page = self.context.new_page()
+                
+                self.page.goto(base_url, timeout=timeout, wait_until='networkidle')
+
+                self.logger.debug(f"Selecting year: {year}")
+                self.page.select_option(year_selector, year)
+                self.page.wait_for_load_state('networkidle', timeout=timeout)
+
+                self.logger.debug(f"Selecting grade: {grade}")
+                self.page.select_option(grade_selector, str(grade))
+                self.page.wait_for_load_state('networkidle', timeout=timeout)
+
+                self.logger.debug(f"Selecting round: {round_name}")
+                self.page.select_option(round_selector, round_name)
+                self.page.wait_for_load_state('networkidle', timeout=timeout)
+                
+                # A polite delay before scraping
+                time.sleep(delay)
+
+                html_content = self.page.content()
+                self.logger.info(f"Successfully retrieved HTML for {year}, grade {grade}, round '{round_name}'")
+                return html_content
+
+            except Exception as e:
+                self.logger.warning(
+                    f"An error occurred on attempt {attempt + 1} for {year}, grade {grade}, round '{round_name}': {e}"
+                )
+                if attempt + 1 == max_retries:
+                    self.logger.error(
+                        f"Failed to get HTML for {year}, grade {grade}, round '{round_name}' after {max_retries} attempts."
+                    )
+                    return None
+        return None

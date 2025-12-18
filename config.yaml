@@ -12,8 +12,8 @@ scraping:
   user_agent: "Bolyai-Competition-Scraper/1.0"
   selectors:
     year_dropdown: "#year"
-    grade_dropdown: "#verseny_evfolyam"
-    round_dropdown: "#verseny_fordulo"
+    grade_dropdown: "#competition"
+    round_dropdown: "#round"
     results_table: "#middle > table > tbody > tr > td > table" # Example
 
 paths:
