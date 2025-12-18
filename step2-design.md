@@ -111,6 +111,7 @@ bolyai_pipeline/
 ### **4.2. Stage 2: Parser (`02_html_parser.py`)**
 
 *   **Main Script**: Scans the raw HTML directory, checks for corresponding processed CSVs to ensure idempotency, and uses the `HtmlTableParser` for processing.
+*   **Important Data Context**: The competition has two rounds: "Írásbeli döntő" (written finals, preliminary positions) and "Szóbeli döntő" (oral finals, final positions). During COVID-19 years, Szóbeli rounds were skipped. The parser must handle both rounds and map grade subcategories (e.g., "7. osztály - általános iskolai kategória") to their base grade number.
 *   **`src/parser/html_parser.py`**:
     *   Defines an `HtmlTableParser` class.
     *   The core parsing will be done using `pandas.read_html()` for simplicity and efficiency.

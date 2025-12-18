@@ -161,6 +161,9 @@ The master CSV file will have the following semicolon-separated columns:
 | `helyezes` | Integer | 1 | The final rank achieved by the team. |
 | `evfolyam` | Integer | 8 | The grade of the competing students (3-8). |
 
+**Note on Competition Rounds:**
+The competition has two rounds: "Írásbeli döntő" (written finals) and "Szóbeli döntő" (oral finals). The Szóbeli round provides final positions, while the Írásbeli round provides preliminary positions (which become final for teams that don't qualify for the oral round). During COVID-19 pandemic years, the Szóbeli round was skipped, making the Írásbeli positions final for all teams.
+
 #### **4.2.2. Proposed Project Directory Structure**
 
 ```

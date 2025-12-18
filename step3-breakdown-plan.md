@@ -68,6 +68,15 @@ This document provides a detailed, step-by-step implementation plan based on the
 
 **Goal:** Convert raw HTML files into clean, structured intermediate CSV files.
 
+**Important Data Context:**
+The competition has two rounds:
+- **"Írásbeli döntő" (written finals):** Provides preliminary positions (which become final for teams that don't qualify for the oral round)
+- **"Szóbeli döntő" (oral finals):** Provides final positions
+
+During COVID-19 pandemic years, the Szóbeli round was skipped, making the Írásbeli positions final for all teams. This explains the 16 unavailable file combinations from the download phase.
+
+The parser will need to handle both rounds and extract grade information from filenames that include subcategories (e.g., "7. osztály - általános iskolai kategória" and "7. osztály - gimnáziumi kategória" should both map to grade 7).
+
 *   **Step 3.1: Implement `HtmlTableParser` Skeleton.**
     *   Create `src/parser/html_parser.py`.
     *   Implement the `HtmlTableParser` class with an `__init__` method accepting the path to an HTML file, `config`, and `logger`.
