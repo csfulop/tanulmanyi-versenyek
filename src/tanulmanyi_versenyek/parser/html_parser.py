@@ -1,6 +1,7 @@
 import logging
 import re
 from pathlib import Path
+import pandas as pd
 
 
 class HtmlTableParser:
@@ -61,4 +62,29 @@ class HtmlTableParser:
             'grade': grade,
             'round': round_slug
         }
+
+    def parse(self) -> pd.DataFrame:
+        """
+        Parse the HTML file and return a clean DataFrame.
+
+        Returns:
+            DataFrame with parsed competition results
+        """
+        self.logger.info(f"Parsing HTML file: {self.html_file_path.name}")
+        
+        # Extract metadata from filename
+        metadata = self._parse_metadata_from_filename(self.html_file_path.name)
+        
+        # Read HTML tables using pandas
+        tables = pd.read_html(str(self.html_file_path))
+        
+        if not tables:
+            raise ValueError(f"No tables found in {self.html_file_path}")
+        
+        # Use the first table (should be the results table)
+        df = tables[0]
+        
+        self.logger.info(f"Extracted table with shape: {df.shape}")
+        
+        return df
 
