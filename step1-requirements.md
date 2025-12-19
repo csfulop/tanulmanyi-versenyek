@@ -185,3 +185,48 @@ bolyai_pipeline/
     ├── master_bolyai_anyanyelv.csv
     └── validation_report.json
 ```
+
+### **4.3. Future Enhancements (Post-MVP)**
+
+The following enhancements are identified for future versions but are out of scope for the MVP:
+
+#### **4.3.1. County (Megye) Data Enrichment**
+
+**Current State:** The `megye` column in the master CSV is empty because the source HTML does not contain county information.
+
+**Future Enhancement:** Integrate a Hungarian city-to-county mapping database to automatically populate the `megye` column based on the `varos` (city) field.
+
+**Implementation Approach:**
+- Obtain or create a reference database of Hungarian cities with their corresponding counties
+- Implement a lookup function in the parser or merger stage
+- Handle edge cases (cities with same names in different counties, Budapest districts, etc.)
+- Add validation to flag cities not found in the reference database
+
+**Benefits:**
+- Complete data for county-based analysis (e.g., megyei_rangsor.xlsx pivot table)
+- Enable geographic analysis and visualizations
+- Improve data quality and completeness
+
+#### **4.3.2. School Name Validation and Normalization**
+
+**Current State:** School names are extracted as-is from the HTML without validation or normalization. Potential issues include typos, inconsistent naming conventions, and abbreviations.
+
+**Future Enhancement:** Integrate a reference database of Hungarian schools to validate and normalize school names.
+
+**Implementation Approach:**
+- Obtain an official database of Hungarian schools (e.g., from Ministry of Education)
+- Implement fuzzy matching to identify potential typos or variations
+- Create a normalization layer to standardize school names
+- Generate a validation report highlighting unmatched or suspicious school names
+- Provide manual review/correction workflow for edge cases
+
+**Benefits:**
+- Improved data quality and consistency
+- Accurate school identification across years
+- Better deduplication in the merger stage
+- More reliable analysis results
+
+**Data Sources to Investigate:**
+- Hungarian Ministry of Education school registry
+- KIR (Köznevelési Információs Rendszer) - Public Education Information System
+- Open data portals (data.gov.hu)
