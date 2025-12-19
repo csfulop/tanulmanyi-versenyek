@@ -114,11 +114,74 @@ def generate_validation_report(df, cfg, duplicates_removed=0):
 
 def generate_excel_report(df, cfg):
     """
-    Placeholder for Excel report generation.
-    Will be implemented later.
+    Generate Excel report with data and summary sheets.
+    Creates summary tables instead of pivot tables for better compatibility.
 
     Args:
         df: Master DataFrame
         cfg: Configuration dictionary
     """
-    logging.info("Excel generation skipped for now")
+    from pathlib import Path
+    from openpyxl import load_workbook
+    from openpyxl.styles import Font
+    from openpyxl.utils import get_column_letter
+    import shutil
+
+    template_path = Path(cfg['paths']['template_file'])
+    report_dir = Path(cfg['paths']['report_dir'])
+    report_dir.mkdir(parents=True, exist_ok=True)
+    output_path = report_dir / 'Bolyai_Analysis_Report.xlsx'
+
+    if not template_path.exists():
+        logging.error(f"Template file not found: {template_path}")
+        return
+
+    shutil.copy(template_path, output_path)
+    logging.info(f"Copied template to {output_path}")
+
+    wb = load_workbook(output_path)
+    ws_data = wb['Data']
+
+    if ws_data.max_row > 1:
+        ws_data.delete_rows(2, ws_data.max_row)
+        logging.debug(f"Cleared existing data rows")
+
+    for r_idx, row in enumerate(df.itertuples(index=False), start=2):
+        for c_idx, value in enumerate(row, start=1):
+            ws_data.cell(row=r_idx, column=c_idx, value=value)
+
+    logging.info(f"Wrote {len(df)} rows to Data sheet")
+
+    ws_school = wb.create_sheet("Ranking_by_School")
+    school_counts = df.groupby('iskola_nev').size().sort_values(ascending=False)
+
+    ws_school.cell(1, 1, 'iskola_nev').font = Font(bold=True)
+    ws_school.cell(1, 2, 'Count').font = Font(bold=True)
+
+    for idx, (school, count) in enumerate(school_counts.items(), start=2):
+        ws_school.cell(idx, 1, school)
+        ws_school.cell(idx, 2, count)
+
+    ws_school.column_dimensions['A'].width = 60
+    ws_school.column_dimensions['B'].width = 10
+
+    logging.info(f"Created Ranking_by_School sheet with {len(school_counts)} schools")
+
+    ws_city = wb.create_sheet("Ranking_by_City")
+    city_counts = df.groupby('varos').size().sort_values(ascending=False)
+
+    ws_city.cell(1, 1, 'varos').font = Font(bold=True)
+    ws_city.cell(1, 2, 'Count').font = Font(bold=True)
+
+    for idx, (city, count) in enumerate(city_counts.items(), start=2):
+        ws_city.cell(idx, 1, city)
+        ws_city.cell(idx, 2, count)
+
+    ws_city.column_dimensions['A'].width = 40
+    ws_city.column_dimensions['B'].width = 10
+
+    logging.info(f"Created Ranking_by_City sheet with {len(city_counts)} cities")
+
+    wb.save(output_path)
+    logging.info(f"Excel report saved to {output_path}")
+    wb.close()
