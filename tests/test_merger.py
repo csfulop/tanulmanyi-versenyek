@@ -26,10 +26,11 @@ def test_merge_with_sample_data():
             }
         }
 
-        result_df = merge_processed_data(test_config)
+        result_df, duplicates_removed = merge_processed_data(test_config)
 
         assert not result_df.empty, "Result DataFrame should not be empty"
         assert len(result_df) == 7, f"Expected 7 unique rows after deduplication, got {len(result_df)}"
+        assert duplicates_removed == 1, f"Expected 1 duplicate removed, got {duplicates_removed}"
 
         expected_columns = ['ev', 'targy', 'iskola_nev', 'varos', 'megye', 'helyezes', 'evfolyam']
         assert list(result_df.columns) == expected_columns, f"Columns mismatch: {list(result_df.columns)}"

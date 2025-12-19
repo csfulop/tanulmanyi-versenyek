@@ -18,12 +18,12 @@ def main():
         cfg = config.get_config()
         logging.info("Configuration loaded successfully.")
 
-        master_df = merge_processed_data(cfg)
+        master_df, duplicates_removed = merge_processed_data(cfg)
         if master_df.empty:
             logging.error("Master DataFrame is empty, cannot proceed")
             return
 
-        generate_validation_report(master_df, cfg)
+        generate_validation_report(master_df, cfg, duplicates_removed)
         generate_excel_report(master_df, cfg)
 
         logging.info("Script completed successfully")
