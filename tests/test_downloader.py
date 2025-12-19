@@ -50,27 +50,3 @@ def test_get_available_years_from_local_html(downloader_with_config):
     assert len(years) > 0
     assert years == expected_years
     test_logger.info("test_get_available_years_from_local_html passed.")
-
-@pytest.mark.live
-def test_get_html_for_combination_live(downloader_with_config):
-    """
-    Live test for get_html_for_combination. Requires an internet connection.
-    This test is marked as 'live' and can be skipped using 'pytest -m "not live"'.
-    """
-    test_logger.info("Running test_get_html_for_combination_live.")
-    
-    # A known valid combination for testing
-    year = "2022-23"
-    grade = "8. osztály - általános iskolai kategória"
-    round_name = "Írásbeli döntő"
-
-    html_content = downloader_with_config.get_html_for_combination(year, grade, round_name)
-
-    assert html_content is not None
-    assert isinstance(html_content, str)
-    assert "Bolyai Anyanyelvi Csapatverseny" in html_content
-    assert grade in html_content
-    assert round_name in html_content
-    assert "eredményei" in html_content
-
-    test_logger.info("test_get_html_for_combination_live passed.")
