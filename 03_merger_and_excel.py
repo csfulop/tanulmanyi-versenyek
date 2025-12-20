@@ -1,4 +1,6 @@
 import logging
+import shutil
+from pathlib import Path
 from tanulmanyi_versenyek.common import config
 from tanulmanyi_versenyek.common import logger
 from tanulmanyi_versenyek.merger.data_merger import (
@@ -17,6 +19,24 @@ def main():
     try:
         cfg = config.get_config()
         logging.info("Configuration loaded successfully.")
+
+        kaggle_template_dir = Path(cfg['paths']['kaggle_template_dir'])
+        kaggle_output_dir = Path(cfg['paths']['kaggle_dir'])
+
+        if kaggle_output_dir.exists():
+            shutil.rmtree(kaggle_output_dir)
+            logging.info(f"Cleaned up existing Kaggle directory: {kaggle_output_dir}")
+
+        kaggle_output_dir.mkdir(parents=True, exist_ok=True)
+        logging.info(f"Created Kaggle directory: {kaggle_output_dir}")
+
+        if kaggle_template_dir.exists():
+            for item in kaggle_template_dir.iterdir():
+                if item.is_file():
+                    shutil.copy(item, kaggle_output_dir / item.name)
+                    logging.info(f"Copied {item.name} to Kaggle directory")
+        else:
+            logging.warning(f"Kaggle template directory not found: {kaggle_template_dir}")
 
         master_df, duplicates_removed = merge_processed_data(cfg)
         if master_df.empty:

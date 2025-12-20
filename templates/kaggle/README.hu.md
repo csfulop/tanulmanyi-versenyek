@@ -1,0 +1,128 @@
+# Bolyai Anyanyelvi Csapatverseny Eredmények (2015-2025)
+
+## Adathalmaz leírása
+
+Ez az adathalmaz a **Bolyai Anyanyelvi Csapatverseny** 10 évnyi történelmi eredményét tartalmazza, amely Magyarország egyik legrangosabb általános és középiskolai tanulmányi versenye.
+
+A versenyt évente rendezik meg 3-8. osztályos tanulók számára, csapatmunkában tesztelve a magyar nyelvi készségeiket. Az adathalmaz az írásbeli döntő és a szóbeli döntő eredményeit tartalmazza a 2015-16-os tanévtől a 2024-25-ös tanévig.
+
+**Összes rekord**: 3233 egyedi versenyeredmény  
+**Képviselt iskolák**: 766 különböző iskola  
+**Lefedett városok**: 264 város Magyarország-szerte  
+**Időszak**: 10 tanév (2015-16-tól 2024-25-ig)
+
+## Adathalmaz szerkezete
+
+### Fájl: `master_bolyai_anyanyelv.csv`
+
+Pontosvesszővel elválasztott CSV fájl, amely az összes versenyeredményt tartalmazza.
+
+**Oszlopok:**
+
+| Oszlop | Típus | Leírás | Példa |
+|--------|-------|--------|-------|
+| `ev` | Szöveg | A verseny tanéve | "2024-25" |
+| `targy` | Szöveg | Tantárgy (mindig "Anyanyelv") | "Anyanyelv" |
+| `iskola_nev` | Szöveg | Az iskola neve | "Budapesti Kölcsey F. Gimnázium" |
+| `varos` | Szöveg | Az iskola városa (Budapest esetén kerületszámmal) | "Budapest III." vagy "Debrecen" |
+| `megye` | Szöveg | Megye (jelenleg üres - nem elérhető a forrásban) | "" |
+| `helyezes` | Egész szám | A csapat végső helyezése | 1 |
+| `evfolyam` | Egész szám | Évfolyam (3-8) | 8 |
+
+**Megjegyzés a `megye` oszlophoz**: Ez az oszlop jelenleg üres, mivel a megyeinformáció nem szerepel a forrásadatokban. Jövőbeli verziók tartalmazhatják ezt város-megye leképezés révén.
+
+## Adatgyűjtési módszertan
+
+### Forrás
+Az adatok a Bolyai Verseny hivatalos weboldaláról lettek gyűjtve: https://magyar.bolyaiverseny.hu/verseny/archivum/eredmenyek.php
+
+### Gyűjtési folyamat
+- **Automatizált webgyűjtés** Playwright használatával (Python)
+- **Udvarias adatgyűjtés**: 5 másodperces késleltetés a lekérések között
+- **Adatkinyerés**: HTML táblázat feldolgozás BeautifulSoup-pal
+- **Adatvalidáció**: Automatikus minőségellenőrzés és duplikáció-szűrés
+
+### Verseny szerkezete
+
+A Bolyai Verseny két fordulóból áll:
+
+1. **Írásbeli döntő**: Minden kvalifikált csapat részt vesz. Az eredmények előzetes helyezéseket mutatnak.
+2. **Szóbeli döntő**: Az egyes évfolyam-kategóriák legjobb 6 csapata jut tovább. Az eredmények végleges helyezéseket mutatnak.
+
+**Fontos**: A szóbeli döntőbe jutott csapatok ebben az adathalmazban csak egyszer szerepelnek, a szóbeli fordulóból származó **végleges helyezésükkel**. A tovább nem jutott csapatok az írásbeli döntőből származó helyezésükkel szerepelnek.
+
+**COVID-19 kivétel**: A 2020-21-es és 2021-22-es tanévekben a szóbeli döntőt törölték. Ezekben az években az írásbeli döntő helyezései számítanak véglegesnek.
+
+## Adatminőség
+
+### Teljességi arány
+- ✅ **100% teljes**: `ev`, `targy`, `iskola_nev`, `varos`, `helyezes`, `evfolyam`
+- ⚠️ **0% teljes**: `megye` (nem elérhető a forrásadatokban)
+
+### Pontosság
+- Az adatok közvetlenül a hivatalos versenyeredményekből származnak
+- Automatikus validációs ellenőrzések végrehajtva
+- Mintavételek manuális ellenőrzése megtörtént
+
+### Duplikáció-szűrés
+- Az írásbeli és szóbeli döntőben is szereplő csapatok deduplikálva
+- Csak a végleges helyezések kerültek megtartásra
+- 0 duplikált rekord a végső adathalmazban
+
+## Felhasználási lehetőségek
+
+Ez az adathalmaz felhasználható:
+
+- **Oktatási kutatás**: A tanulmányi kiválóság földrajzi eloszlásának elemzése
+- **Iskolai teljesítményelemzés**: Iskolák versenyszereplésének és sikerességének nyomon követése
+- **Trendelemzés**: Minták azonosítása a versenyeredményekben az idő múlásával
+- **Földrajzi elemzés**: Regionális különbségek megértése a tanulmányi teljesítményben
+- **Adatvizualizáció**: Térképek, grafikonok és dashboardok készítése
+- **Gépi tanulás**: Versenyeredmények előrejelzése, iskolák teljesítmény szerinti klaszterezése
+
+## Korlátozások
+
+1. **Megyeadatok nem elérhetők**: A `megye` oszlop üres, mivel ez az információ nem szerepel a forrásadatokban
+2. **Nincsenek tanulónevek**: Adatvédelmi okokból az egyéni tanulónevek nem szerepelnek
+3. **Csak egy tantárgy**: Ez az adathalmaz csak az anyanyelvi kategóriát tartalmazza. Más tantárgyak (matematika, angol, stb.) nem szerepelnek
+4. **Hiányos történelmi adatok**: Csak a 2015-16-os tanévtől kezdődő eredmények érhetők el
+5. **Évfolyam alkategóriák**: A 7-8. osztálynak vannak alkategóriái (általános iskola vs. gimnázium), amelyek az alapévfolyam-számokra vannak normalizálva
+
+## Adatvédelem és etika
+
+- **Nincsenek személyes adatok**: Tanulónevek és más személyazonosításra alkalmas információk nem szerepelnek
+- **Csak nyilvános adatok**: Minden adat nyilvánosan elérhető versenyeredményekből lett gyűjtve
+- **Etikus adatgyűjtés**: Az automatizált gyűjtés udvarias gyakorlatokat követett megfelelő késleltetésekkel
+- **Nem kereskedelmi használat**: Ez az adathalmaz oktatási és kutatási célokra készült
+
+## Hivatkozás
+
+Ha ezt az adathalmazt kutatásában vagy projektjében használja, kérjük hivatkozzon rá:
+
+```
+Bolyai Anyanyelvi Csapatverseny Eredmények (2015-2025)
+Forrás: Bolyai Verseny Hivatalos Weboldal (https://magyar.bolyaiverseny.hu)
+Adathalmaz összeállítva: 2025. december
+```
+
+## Frissítések és karbantartás
+
+- **Jelenlegi verzió**: 0.1.0 (MVP)
+- **Utolsó frissítés**: 2025. december 20.
+- **Frissítési gyakoriság**: Tervezett éves frissítések minden versenyév után
+- **Jövőbeli fejlesztések**: 
+  - Megyeadatok gazdagítása
+  - További tantárgyak (matematika, angol, stb.)
+  - Más magyar tanulmányi versenyek (OKTV, Zrínyi Ilona)
+
+## Kapcsolat és visszajelzés
+
+Kérdések, javítások vagy javaslatok esetén kérjük nyisson egy issue-t a GitHub repository-ban vagy vegye fel a kapcsolatot Kaggle-ön keresztül.
+
+## Licenc
+
+Ez az adathalmaz oktatási és kutatási célokra készült. Az eredeti versenyeredmények nyilvánosan elérhetők a Bolyai Verseny weboldalán.
+
+---
+
+**Kulcsszavak**: Magyarország, oktatás, tanulmányi verseny, anyanyelv, magyar nyelv, általános iskola, középiskola, csapatverseny, oktatási adatok, iskolai rangsorok

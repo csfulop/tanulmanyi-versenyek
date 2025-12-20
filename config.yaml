@@ -29,10 +29,12 @@ paths:
   raw_html_dir: "data/raw_html"
   processed_csv_dir: "data/processed_csv"
   report_dir: "data/analysis_templates"
-  master_csv: "data/master_bolyai_anyanyelv.csv"
+  kaggle_dir: "data/kaggle"
+  master_csv: "data/kaggle/master_bolyai_anyanyelv.csv"
   validation_report: "data/validation_report.json"
   log_file: "data/pipeline.log"
   template_file: "templates/report_template.xlsx"
+  kaggle_template_dir: "templates/kaggle"
 
 logging:
   log_level: "INFO"
