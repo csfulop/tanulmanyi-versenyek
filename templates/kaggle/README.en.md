@@ -101,7 +101,7 @@ If you use this dataset in your research or project, please cite:
 
 ```
 Csaba Fülöp (2025). Bolyai Hungarian Mother Tongue Team Competition Results Dataset (2015-2025). 
-Retrieved from [Kaggle URL]
+Retrieved from https://www.kaggle.com/datasets/csfulop/tanulmanyi-versenyek
 License: CC BY 4.0
 ```
 

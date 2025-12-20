@@ -101,7 +101,7 @@ Ha ezt az adathalmazt kutatásában vagy projektjében használja, kérjük hiva
 
 ```
 Fülöp Csaba (2025). Bolyai Anyanyelvi Csapatverseny Eredmények Adathalmaz (2015-2025). 
-Forrás: [Kaggle URL]
+Forrás: https://www.kaggle.com/datasets/csfulop/tanulmanyi-versenyek
 Licenc: CC BY 4.0
 ```
 

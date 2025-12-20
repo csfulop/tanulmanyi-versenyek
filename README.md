@@ -58,7 +58,7 @@ A program **10 év** versenyeredményét dolgozza fel:
 ```bash
 # Repository klónozása
 git clone <repository-url>
-cd tanulmanyi_versenyek
+cd tanulmanyi-versenyek
 
 # Függőségek telepítése
 poetry install
@@ -121,7 +121,7 @@ A program intelligensen kezeli az írásbeli és szóbeli döntők eredményeit:
 ### Projekt szerkezete
 
 ```
-tanulmanyi_versenyek/
+tanulmanyi-versenyek/
 ├── 01_raw_downloader.py      # Letöltő script
 ├── 02_html_parser.py          # Feldolgozó script
 ├── 03_merger_and_excel.py     # Összesítő és riport készítő script
