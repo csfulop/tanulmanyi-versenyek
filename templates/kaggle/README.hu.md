@@ -100,10 +100,12 @@ Ez az adathalmaz felhasználható:
 Ha ezt az adathalmazt kutatásában vagy projektjében használja, kérjük hivatkozzon rá:
 
 ```
-Bolyai Anyanyelvi Csapatverseny Eredmények (2015-2025)
-Forrás: Bolyai Verseny Hivatalos Weboldal (https://magyar.bolyaiverseny.hu)
-Adathalmaz összeállítva: 2025. december
+Fülöp Csaba (2025). Bolyai Anyanyelvi Csapatverseny Eredmények Adathalmaz (2015-2025). 
+Forrás: [Kaggle URL]
+Licenc: CC BY 4.0
 ```
+
+**Eredeti adatforrás:** Bolyai Verseny Hivatalos Weboldal (https://magyar.bolyaiverseny.hu)
 
 ## Frissítések és karbantartás
 
@@ -121,7 +123,17 @@ Kérdések, javítások vagy javaslatok esetén kérjük nyisson egy issue-t a G
 
 ## Licenc
 
-Ez az adathalmaz oktatási és kutatási célokra készült. Az eredeti versenyeredmények nyilvánosan elérhetők a Bolyai Verseny weboldalán.
+Ez az adathalmaz **Creative Commons Nevezd meg! 4.0 Nemzetközi (CC BY 4.0)** licenc alatt áll.
+
+Szabadon megoszthatja és feldolgozhatja ezt az adathalmazt bármilyen célra, beleértve a kereskedelmi felhasználást is, amennyiben megfelelő forrásmegjelölést ad.
+
+### Adatforrás és jogi nyilatkozat
+
+A versenyeredmények ebben az adathalmazban nyilvánosan elérhetők a Bolyai Verseny weboldalán (https://www.bolyaiverseny.hu). A verseny adatkezelési tájékoztatója szerint a résztvevők adatai (évfolyam, iskola, helyezés) nyilvánosak, és a résztvevők a nevezéskor hozzájárulásukat adják ehhez.
+
+Ez az adathalmaz csak nyilvánosan elérhető információkat tartalmaz. Magán- vagy regisztrációs adatok nem szerepelnek. A CC BY 4.0 licenc az összeállításra, feldolgozásra, dokumentációra és származékos művekre vonatkozik, nem az alapul szolgáló versenyeredményekre, amelyek a Bolyai Verseny szervezőinek tulajdonát képezik.
+
+A hivatkozási információkért lásd a fenti **Hivatkozás** részt.
 
 ---
 

@@ -100,10 +100,12 @@ This dataset can be used for:
 If you use this dataset in your research or project, please cite:
 
 ```
-Bolyai Hungarian Mother Tongue Team Competition Results (2015-2025)
-Source: Bolyai Competition Official Website (https://magyar.bolyaiverseny.hu)
-Dataset compiled: December 2025
+Csaba Fülöp (2025). Bolyai Hungarian Mother Tongue Team Competition Results Dataset (2015-2025). 
+Retrieved from [Kaggle URL]
+License: CC BY 4.0
 ```
+
+**Original data source:** Bolyai Competition Official Website (https://magyar.bolyaiverseny.hu)
 
 ## Updates & Maintenance
 
@@ -121,7 +123,17 @@ For questions, corrections, or suggestions regarding this dataset, please open a
 
 ## License
 
-This dataset is provided for educational and research purposes. The original competition results are publicly available from the Bolyai Competition website.
+This dataset is licensed under **Creative Commons Attribution 4.0 International (CC BY 4.0)**.
+
+You are free to share and adapt this dataset for any purpose, including commercial use, as long as you provide appropriate attribution.
+
+### Data Source and Legal Notice
+
+The competition results in this dataset are publicly available on the Bolyai Competition website (https://www.bolyaiverseny.hu). According to the competition's data policy, participant data (grade, school, placement) is public, and participants consent to this publication when registering.
+
+This dataset contains only publicly available information. No private or registration data is included. The CC BY 4.0 license applies to the compilation, processing, documentation, and derived works, not to the underlying competition results which remain the property of the Bolyai Competition organizers.
+
+For citation information, see the **Citation** section above.
 
 ---
 

@@ -150,7 +150,15 @@ A projekt MVP (Minimum Viable Product) állapotban van. Tervezett fejlesztések:
 
 ## Licenc
 
-Ez a projekt személyes, nem kereskedelmi célú használatra készült.
+### Forráskód
+A projekt forráskódja **MIT Licenc** alatt áll. Szabadon használható, módosítható és terjeszthető, csak a forrásmegjelölés kötelező.
+
+### Adathalmaz
+A generált adathalmaz **Creative Commons Nevezd meg! 4.0 Nemzetközi (CC BY 4.0)** licenc alatt áll. Szabadon használható bármilyen célra (beleértve a kereskedelmi felhasználást is), amennyiben megfelelő forrásmegjelölést ad.
+
+**Fontos**: Az eredeti versenyeredmények a Bolyai Verseny szervezőinek tulajdonát képezik és nyilvánosan elérhetők a verseny weboldalán. A licenc az adatok összeállítására, feldolgozására és dokumentációjára vonatkozik.
+
+Részletek: lásd a `LICENSE` fájlt a repository gyökerében és a `templates/kaggle/LICENSE` fájlt az adathalmazhoz.
 
 ## Kapcsolat
 
