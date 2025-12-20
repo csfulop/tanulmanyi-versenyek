@@ -76,3 +76,16 @@
 - ❌ NEVER: Leave trailing whitespace at end of lines
 - ❌ NEVER: Use tabs - use spaces for indentation
 - ❌ NEVER: Use comments for historical changes - use git
+
+## Data Merging (Bolyai Competition Specific)
+- ✅ ALWAYS: When both Írásbeli and Szóbeli exist for same year+grade: drop top N rows from Írásbeli (where N = Szóbeli row count)
+- ✅ ALWAYS: Keep all Szóbeli rows (final positions for qualifiers)
+- ✅ ALWAYS: Keep remaining Írásbeli rows (final positions for non-qualifiers)
+- ✅ ALWAYS: Handle COVID years (2020-21, 2021-22) where only Írásbeli exists
+- ✅ ALWAYS: Use composite key for deduplication: (ev, evfolyam, iskola_nev, helyezes)
+
+## Excel Generation
+- ✅ ALWAYS: Use summary tables (pre-aggregated) instead of pivot tables for automated reports
+- ✅ ALWAYS: Aggregate data with pandas before writing to Excel
+- ❌ NEVER: Rely on openpyxl to create pivot tables programmatically (limited support)
+- ❌ NEVER: Use LibreOffice to create Excel pivot tables in .xlsx format (compatibility issues)
