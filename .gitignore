@@ -3,3 +3,4 @@ __pycache__
 data
 tests/test_data/live_data/
 .~lock*
+.vscode
