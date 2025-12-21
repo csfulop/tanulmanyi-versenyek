@@ -129,7 +129,7 @@ You are free to share and adapt this dataset for any purpose, including commerci
 
 ### Data Source and Legal Notice
 
-The competition results in this dataset are publicly available on the Bolyai Competition website (https://www.bolyaiverseny.hu). According to the competition's data policy, participant data (grade, school, placement) is public, and participants consent to this publication when registering.
+The competition results in this dataset are publicly available on the Bolyai Competition website (https://www.bolyaiverseny.hu). According to the competition's data policy (https://www.bolyaiverseny.hu/adatkezeles.php), participant data (grade, school, placement) is public, and participants consent to this publication when registering.
 
 This dataset contains only publicly available information. No private or registration data is included. The CC BY 4.0 license applies to the compilation, processing, documentation, and derived works, not to the underlying competition results which remain the property of the Bolyai Competition organizers.
 
