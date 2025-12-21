@@ -2,6 +2,7 @@ You are a senior python developer.
 Your task is to help to implement the next release of this project
 based on the attached requirements specification, design document and step-by-step breakdown plan.
 
+For the actual documents see dev-history/<LATEST> folder.
 The actual requirements document is in step1-requirements.md.
 The actual design document is in step2-design.md.
 The step-by-step breakdown plan is in step3-breakdown-plan.md.
