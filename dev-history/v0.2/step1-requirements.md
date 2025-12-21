@@ -27,7 +27,7 @@ This document specifies the requirements for **version 0.2.0** of the Hungarian 
 - Single Jupyter notebook for data exploration and analysis
 - Three core analytical features: school rankings, city rankings, and school search
 - Dual language support (Hungarian and English)
-- Kaggle-native implementation with local execution support via Docker
+- Kaggle-native implementation with dual local execution support (Poetry and Docker)
 - Manual parameter configuration (no interactive widgets in MVP)
 - Table-based output (no charts in MVP)
 
@@ -45,7 +45,7 @@ This document specifies the requirements for **version 0.2.0** of the Hungarian 
 1. **v0.1.0 Documentation:** `dev-history/v0.1/` - Previous version's requirements and design
 2. **Dataset:** `data/kaggle/master_bolyai_anyanyelv.csv` - 3,233 competition results
 3. **Kaggle Platform:** https://www.kaggle.com/
-4. **Kaggle Docker Image:** https://github.com/kaggle/docker-python
+4. **Kaggle Docker Image:** https://github.com/kaggle/docker-python (optional, 20GB)
 
 ## 2. Overall Description
 
@@ -54,7 +54,7 @@ This document specifies the requirements for **version 0.2.0** of the Hungarian 
 The Jupyter notebook is a new component that sits on top of the existing data pipeline (v0.1). It consumes the master CSV file produced by the pipeline and provides an interactive exploration environment. The notebook is designed to be:
 
 - **Kaggle-native:** Primary execution environment is Kaggle's notebook platform
-- **Locally executable:** Can be run using Kaggle's Docker image for local development
+- **Locally executable:** Can be run using Poetry (recommended) or Kaggle's Docker image (optional)
 - **Standalone:** Independent from the data pipeline scripts, manually uploaded to Kaggle
 - **Educational:** Serves as both an analysis tool and a template for users to learn from
 
@@ -93,9 +93,9 @@ The notebook will provide three core analytical functions:
 ### 2.4. Constraints
 
 **Technical Constraints:**
-- Must work in Kaggle's Python Docker environment
-- Must use libraries available in Kaggle's standard image
-- File paths must be Kaggle-compatible (`/kaggle/input/...`)
+- Must work in Kaggle's Python environment
+- Must use libraries available in Kaggle's standard image (and in project's Poetry dependencies)
+- File paths must be Kaggle-compatible (`/kaggle/input/...`) with fallback for local paths
 - No external API calls or internet dependencies during execution
 
 **Design Constraints:**
@@ -106,7 +106,7 @@ The notebook will provide three core analytical functions:
 
 **Operational Constraints:**
 - Notebook is manually uploaded to Kaggle (not automated)
-- Local execution requires Docker installation
+- Local execution requires either Poetry environment or Docker installation (user's choice)
 - Dataset must be pre-attached in Kaggle environment
 
 ### 2.5. Assumptions and Dependencies
@@ -118,10 +118,10 @@ The notebook will provide three core analytical functions:
 - Dataset is already uploaded to Kaggle and attached to the notebook
 
 **Dependencies:**
-- Kaggle Python Docker image (kaggle/python)
-- Python libraries: pandas (primary dependency)
+- Python 3.11+ with Poetry (for local development)
+- Kaggle Python Docker image (kaggle/python) - optional, 20GB
+- Python libraries: pandas, jupyter, IPython (already in Poetry dependencies)
 - Master CSV file from v0.1 pipeline
-- Docker for local execution
 
 ## 3. Specific Requirements
 
@@ -492,27 +492,46 @@ Display the following four statistics:
 
 #### FR-011: Local Execution Support
 
-**Description:** The project shall provide a convenience script and documentation for running the notebook locally using Kaggle's Docker image.
+**Description:** The project shall provide dual methods for running the notebook locally: Poetry (recommended, fast) and Docker (optional, exact Kaggle environment).
 
 **Deliverables:**
 
-1. **Bash Script: `run_notebook_locally.sh`**
-   - Launches Jupyter notebook server in Kaggle Docker container
-   - Mounts local data directory to `/kaggle/input/bolyai-anyanyelv/`
-   - Mounts notebooks directory for editing
-   - Exposes Jupyter on localhost:8888
-   - Includes proper volume mounts and port mappings
+1. **Bash Script: `run_notebook_with_poetry.sh`**
+   - Launches Jupyter notebook server using Poetry environment
+   - Simple wrapper around `poetry run jupyter notebook`
+   - Fast startup, no download required
+   - Uses relative paths in notebook
 
-2. **README Section: "Running Locally"**
-   - Explains prerequisites (Docker installation)
-   - Shows how to use the script
-   - Explains the directory structure and mounts
+2. **Bash Script: `run_notebook_in_docker.sh`**
+   - Launches Jupyter notebook server in Kaggle Docker container (20GB image)
+   - Mounts local data directory to `/kaggle/input/tanulmanyi-versenyek/`
+   - Mounts notebooks directory for editing
+   - Provides exact Kaggle environment
+   - Exposes Jupyter on localhost:8888
+
+3. **Path Detection in Notebook**
+   - Automatically detects if running on Kaggle or locally
+   - Uses `/kaggle/input/...` on Kaggle
+   - Uses `../data/kaggle/...` locally
+   - Transparent to user
+
+4. **README Section: "Running Locally"**
+   - Explains both methods (Poetry recommended, Docker optional)
+   - Shows prerequisites for each method
+   - Explains trade-offs (speed vs exact environment)
    - Troubleshooting common issues
 
-**Script Requirements:**
+**Script Requirements (Poetry):**
 ```bash
 #!/bin/bash
-# Pull Kaggle Docker image
+# Activate Poetry environment and run Jupyter
+poetry run jupyter notebook
+```
+
+**Script Requirements (Docker):**
+```bash
+#!/bin/bash
+# Pull Kaggle Docker image (20GB)
 # Mount data/kaggle/ to /kaggle/input/tanulmanyi-versenyek/
 # Mount notebooks/ to /kaggle/working/
 # Run Jupyter notebook server
@@ -520,11 +539,13 @@ Display the following four statistics:
 ```
 
 **Acceptance Criteria:**
-- Script successfully launches Jupyter in Kaggle Docker
-- Data is accessible at correct Kaggle path
+- Poetry script launches Jupyter quickly using existing environment
+- Docker script successfully launches Jupyter in Kaggle Docker
+- Path detection works transparently in both environments
+- Data is accessible in both methods
 - Notebook can be edited and saved locally
-- README provides clear, step-by-step instructions
-- Script works on Linux and macOS (Windows via WSL)
+- README provides clear comparison and instructions for both methods
+- Scripts work on Linux and macOS (Windows via WSL)
 
 **Priority:** Medium
 
@@ -599,9 +620,9 @@ Display the following four statistics:
 
 **Requirements:**
 - Works in Kaggle's notebook environment (primary)
-- Works locally using Kaggle Docker image
-- No environment-specific code (except file paths)
-- Uses only libraries available in Kaggle's standard image
+- Works locally using Poetry (recommended) or Kaggle Docker image (optional)
+- Path detection handles both Kaggle and local environments
+- Uses only libraries available in Kaggle's standard image and Poetry dependencies
 
 **Acceptance Criteria:**
 - Same notebook file works on Kaggle and locally without modifications
@@ -636,9 +657,12 @@ Display the following four statistics:
 **New Files:**
 ```
 notebooks/
+```
+notebooks/
 └── competition_analysis.ipynb     # Main analysis notebook (general name for future expansion)
 
-run_notebook_locally.sh            # Docker execution script (project root)
+run_notebook_with_poetry.sh       # Poetry execution script (project root) - RECOMMENDED
+run_notebook_in_docker.sh          # Docker execution script (project root) - OPTIONAL
 ```
 
 **Updated Files:**
@@ -806,7 +830,7 @@ The release will be considered successful when:
 1. ✅ Notebook executes without errors on Kaggle
 2. ✅ All three core features (school rankings, city rankings, school search) work correctly
 3. ✅ Dual language support is complete and accurate
-4. ✅ Local execution via Docker script works
+4. ✅ Local execution via both Poetry and Docker works
 5. ✅ Documentation is clear and comprehensive
 6. ✅ Code is clean, readable, and well-commented
 7. ✅ Notebook is uploaded to Kaggle and publicly accessible

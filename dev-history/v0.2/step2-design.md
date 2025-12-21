@@ -46,7 +46,8 @@ v0.2.0 Components:
 │   └── competition_analysis.ipynb    # Self-contained analysis notebook
 ├── tests/
 │   └── test_notebook_helpers.py      # Unit tests for helper functions
-├── run_notebook_locally.sh           # Docker execution script
+├── run_notebook_with_poetry.sh       # Poetry execution script (RECOMMENDED)
+├── run_notebook_in_docker.sh         # Docker execution script (OPTIONAL, 20GB)
 └── Documentation updates:
     ├── README.md                      # New "Notebooks" section
     └── templates/kaggle/README.*.md   # Brief notebook mention
@@ -539,21 +540,60 @@ else:
 
 ## 4. Infrastructure Components
 
-### 4.1. Docker Execution Script
+### 4.1. Local Execution Scripts
 
-**File:** `run_notebook_locally.sh`
+#### 4.1.1. Poetry Execution Script (RECOMMENDED)
 
-**Purpose:** Launch Jupyter notebook in Kaggle's Docker environment with proper volume mounts.
+**File:** `run_notebook_with_poetry.sh`
+
+**Purpose:** Launch Jupyter notebook using Poetry environment for fast local development.
 
 **Implementation:**
 
 ```bash
 #!/bin/bash
 
-# Run Jupyter notebook locally using Kaggle's Docker image
-# This ensures the same environment as Kaggle's platform
+echo "Starting Jupyter notebook with Poetry environment..."
+echo ""
+echo "Jupyter will be available at: http://localhost:8888"
+echo "Press Ctrl+C to stop the server"
+echo ""
+
+cd "$(dirname "$0")"
+poetry run jupyter notebook
+```
+
+**Key Features:**
+- Uses existing Poetry environment (no download)
+- Fast startup (~2 seconds)
+- Notebook uses relative paths (`../data/kaggle/...`)
+- Simple and lightweight
+
+**Usage:**
+```bash
+chmod +x run_notebook_with_poetry.sh
+./run_notebook_with_poetry.sh
+```
+
+---
+
+#### 4.1.2. Docker Execution Script (OPTIONAL)
+
+**File:** `run_notebook_in_docker.sh`
+
+**Purpose:** Launch Jupyter notebook in Kaggle's Docker environment for exact platform replication.
+
+**Implementation:**
+
+```bash
+#!/bin/bash
+
+# Run Jupyter notebook locally using Kaggle's Docker image (20GB)
+# This ensures the exact same environment as Kaggle's platform
 
 echo "Starting Jupyter notebook in Kaggle Docker environment..."
+echo ""
+echo "⚠️  Note: First run will download 20GB Docker image"
 echo ""
 echo "Mounting:"
 echo "  - data/kaggle/ → /kaggle/input/tanulmanyi-versenyek/"
@@ -577,7 +617,8 @@ docker run -it --rm \
 ```
 
 **Key Features:**
-- Uses official `kaggle/python` Docker image
+- Uses official `kaggle/python` Docker image (20GB)
+- Exact Kaggle environment replication
 - Mounts local data directory to Kaggle's expected path
 - Mounts notebooks directory for editing
 - Disables authentication for local use
@@ -585,9 +626,46 @@ docker run -it --rm \
 
 **Usage:**
 ```bash
-chmod +x run_notebook_locally.sh
-./run_notebook_locally.sh
+chmod +x run_notebook_in_docker.sh
+./run_notebook_in_docker.sh
 ```
+
+**Trade-offs:**
+- ✅ Exact Kaggle environment
+- ✅ Guaranteed compatibility
+- ❌ 20GB download on first run
+- ❌ Slower startup (~10-30 seconds)
+
+---
+
+#### 4.1.3. Path Detection in Notebook
+
+**Purpose:** Automatically detect execution environment and use appropriate file paths.
+
+**Implementation:**
+
+```python
+# Cell: Data Loading Configuration
+import os
+
+# Detect environment and set data path
+if os.path.exists('/kaggle/input'):
+    # Running on Kaggle
+    DATA_PATH = '/kaggle/input/tanulmanyi-versenyek/master_bolyai_anyanyelv.csv'
+    print("✓ Running on Kaggle platform")
+else:
+    # Running locally
+    DATA_PATH = '../data/kaggle/master_bolyai_anyanyelv.csv'
+    print("✓ Running locally")
+
+print(f"Data path: {DATA_PATH}")
+```
+
+**Key Features:**
+- Transparent to user
+- Works in both Poetry and Docker environments
+- Works on Kaggle platform
+- Simple 3-line detection logic
 
 ---
 
@@ -840,7 +918,7 @@ Docker segítségével futtathatod a notebookot ugyanabban a környezetben, mint
 
 ```bash
 # Indítsd el a Jupyter szervert Kaggle Docker környezetben
-./run_notebook_locally.sh
+./run_notebook_with_poetry.sh
 
 # Nyisd meg a böngészőben: http://localhost:8888
 ```
@@ -867,7 +945,7 @@ You can run the notebook in the same environment as Kaggle using Docker:
 
 ```bash
 # Start Jupyter server in Kaggle Docker environment
-./run_notebook_locally.sh
+./run_notebook_with_poetry.sh
 
 # Open in browser: http://localhost:8888
 ```
@@ -932,7 +1010,7 @@ The notebook expects data at: `/kaggle/input/tanulmanyi-versenyek/master_bolyai_
 
 1. From the project root, run:
    ```bash
-   ./run_notebook_locally.sh
+   ./run_notebook_with_poetry.sh
    ```
 
 2. Open your browser to: `http://localhost:8888`
@@ -964,7 +1042,7 @@ docker pull kaggle/python
 **Permission denied:**
 ```bash
 # Make the script executable
-chmod +x run_notebook_locally.sh
+chmod +x run_notebook_with_poetry.sh
 ```
 
 ## Customization
@@ -1056,7 +1134,7 @@ An analysis Jupyter notebook with interactive exploration examples is available 
 
 **Phase 1: Setup and Infrastructure (1-2 hours)**
 - Create `notebooks/` directory
-- Create `run_notebook_locally.sh` script
+- Create `run_notebook_with_poetry.sh` script
 - Test Docker script execution
 - Create `notebooks/README.md`
 
@@ -1113,12 +1191,12 @@ An analysis Jupyter notebook with interactive exploration examples is available 
    ```bash
    mkdir -p notebooks
    touch notebooks/README.md
-   touch run_notebook_locally.sh
-   chmod +x run_notebook_locally.sh
+   touch run_notebook_with_poetry.sh
+   chmod +x run_notebook_with_poetry.sh
    ```
 
 2. **Implement Docker script**
-   - Write `run_notebook_locally.sh` per specification
+   - Write `run_notebook_with_poetry.sh` per specification
    - Test locally to ensure it works
 
 3. **Create notebook skeleton**
@@ -1371,7 +1449,7 @@ PARAMETER_NAME = default_value  # Description
 2. **Notebook Execution**
    ```bash
    # Local execution
-   ./run_notebook_locally.sh
+   ./run_notebook_with_poetry.sh
    # Execute all cells, verify no errors
    ```
 
@@ -1420,7 +1498,7 @@ PARAMETER_NAME = default_value  # Description
 ### 9.3. Deliverables Complete
 
 - [ ] `notebooks/competition_analysis.ipynb` created ✓
-- [ ] `run_notebook_locally.sh` created and tested ✓
+- [ ] `run_notebook_with_poetry.sh` created and tested ✓
 - [ ] `notebooks/README.md` created ✓
 - [ ] `tests/test_notebook_helpers.py` created ✓
 - [ ] Main `README.md` updated ✓
@@ -1527,7 +1605,7 @@ For more information about the dataset: [Dataset README](link)
 
 ```bash
 # Commit 1: Infrastructure
-git add run_notebook_locally.sh notebooks/README.md
+git add run_notebook_with_poetry.sh notebooks/README.md
 git commit -m "feat(v0.2): Add Docker script and notebooks README"
 
 # Commit 2: Notebook skeleton

@@ -14,25 +14,30 @@ This document provides a detailed, step-by-step implementation plan based on the
 
 ## **Phase 1: Project Setup & Infrastructure**
 
-**Goal:** Establish the directory structure and execution infrastructure for the notebook component.
+**Goal:** Establish the directory structure and dual execution infrastructure (Poetry and Docker) for the notebook component.
 
 * **Step 1.1: Create Directory Structure.**
   * Create `notebooks/` directory in project root.
   * Create `notebooks/README.md` placeholder file.
-  * Create `run_notebook_locally.sh` script in project root.
-  * Make the script executable: `chmod +x run_notebook_locally.sh`
-* **Step 1.2: Implement Docker Execution Script.**
-  * Implement `run_notebook_locally.sh` to run Jupyter using Kaggle's Docker image.
+* **Step 1.2: Create Test File Structure.**
+  * Create `tests/test_notebook_helpers.py`.
+  * Add imports: `pytest`, `pandas`.
+  * Create a `sample_df` fixture with representative test data (10 rows covering different years, grades, schools, cities).
+  * Run `poetry run pytest tests/test_notebook_helpers.py` to verify test file is valid.
+* **Step 1.3: Implement Docker Execution Script.**
+  * Create `run_notebook_in_docker.sh` script in project root.
+  * Implement script to run Jupyter using Kaggle's Docker image (20GB).
   * Configure volume mounts: `data/kaggle/` → `/kaggle/input/tanulmanyi-versenyek/` and `notebooks/` → `/kaggle/working/`.
   * Configure Jupyter to run on port 8888 without authentication for local development.
-* **Step 1.3: Create Test File Structure.**
-  * Create `tests/test_notebook_helpers.py`.
-  * Add imports: `pytest`, `pandas`, `numpy`.
-  * Create a `sample_df` fixture with representative test data (5-10 rows covering different years, grades, schools, cities).
-* **Step 1.4: Verify Infrastructure.**
-  * Run `./run_notebook_locally.sh` to verify Docker script works (will pull image on first run).
-  * Access Jupyter at `http://localhost:8888` and verify the `notebooks/` directory is visible.
-  * Run `poetry run pytest tests/test_notebook_helpers.py` to verify test file is valid (should pass with no tests yet).
+  * Make the script executable: `chmod +x run_notebook_in_docker.sh`
+* **Step 1.4: Implement Poetry Execution Script.**
+  * Create `run_notebook_with_poetry.sh` script in project root.
+  * Implement simple wrapper around `poetry run jupyter notebook`.
+  * Make the script executable: `chmod +x run_notebook_with_poetry.sh`
+* **Step 1.5: Verify Infrastructure.**
+  * Run `poetry run pytest tests/test_notebook_helpers.py` to verify test infrastructure (should pass with 1 test).
+  * Optionally test Docker script: `./run_notebook_in_docker.sh` (will pull 20GB image on first run).
+  * Optionally test Poetry script: `./run_notebook_with_poetry.sh` (fast, uses existing environment).
 
 ---
 
