@@ -90,6 +90,38 @@ A program a `data/` mappában hozza létre az eredményeket:
 - `validation_report.json` - Adatminőségi jelentés
 - `analysis_templates/Bolyai_Analysis_Report.xlsx` - Excel elemzés
 
+## Notebooks - Adatelemzés
+
+A projekt tartalmaz egy Jupyter notebookot az adatok interaktív elemzéséhez.
+
+### Notebook használata Kaggle-ön
+
+A notebook már elérhető Kaggle-ön, vagy feltöltheted saját verziódat:
+
+- **Notebook Kaggle-ön:** https://www.kaggle.com/code/csfulop/tanulmanyi-versenyek-eredmenyelemzes
+- **Dataset Kaggle-ön:** https://www.kaggle.com/datasets/csfulop/tanulmanyi-versenyek
+
+**Saját verzió feltöltéséhez:**
+1. Töltsd fel a notebookot (`notebooks/competition_analysis.ipynb`) a Kaggle-re
+2. Csatold hozzá a `tanulmanyi-versenyek` adathalmazt
+3. Futtasd a cellákat sorban
+
+### Notebook használata lokálisan
+
+**Ajánlott módszer (Poetry - gyors):**
+```bash
+./run_notebook_with_poetry.sh
+# Nyisd meg a böngészőben: http://localhost:8888
+```
+
+**Alternatív módszer (Docker - pontos Kaggle környezet, 20GB):**
+```bash
+./run_notebook_in_docker.sh
+# Nyisd meg a böngészőben: http://localhost:8888
+```
+
+**Részletek:** Lásd `notebooks/README.md`
+
 ## Fontos tudnivalók
 
 ### Adatvédelem
@@ -162,10 +194,21 @@ Részletek: lásd a `LICENSE` fájlt a repository gyökerében és a `templates/
 
 ## Kapcsolat
 
-Kérdések, javaslatok esetén nyiss egy issue-t a GitHub repository-ban.
+Kérdések, javaslatok esetén:
+
+- **GitHub Repository:** https://github.com/csfulop/tanulmanyi-versenyek
+- **Kaggle Dataset:** https://www.kaggle.com/datasets/csfulop/tanulmanyi-versenyek
+- **Kaggle Notebook:** https://www.kaggle.com/code/csfulop/tanulmanyi-versenyek-eredmenyelemzes
 
 ---
 
-**Utolsó frissítés**: 2025. december 20.
-**Verzió**: 0.1.0 (MVP)
+**Utolsó frissítés**: 2025. december 22.
+**Verzió**: 0.2.0
 **Lefedett adatok**: 2015-16 - 2024-25 tanévek, Bolyai Anyanyelvi Csapatverseny
+
+**Új v0.2.0-ban:**
+- Jupyter notebook interaktív adatelemzéshez
+- Iskolák és városok rangsorai (darabszám és súlyozott pontszám alapján)
+- Iskola keresés funkció
+- Dual language support (Magyar/English)
+- Helyi futtatás Poetry-vel vagy Docker-rel

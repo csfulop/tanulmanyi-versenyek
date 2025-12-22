@@ -119,7 +119,15 @@ Licenc: CC BY 4.0
 
 ## Kapcsolat és visszajelzés
 
-Kérdések, javítások vagy javaslatok esetén kérjük nyisson egy issue-t a GitHub repository-ban vagy vegye fel a kapcsolatot Kaggle-ön keresztül.
+Kérdések, javítások vagy javaslatok esetén:
+
+- **GitHub Repository:** https://github.com/csfulop/tanulmanyi-versenyek
+- **Kaggle Dataset:** https://www.kaggle.com/datasets/csfulop/tanulmanyi-versenyek
+- **Kaggle Notebook:** https://www.kaggle.com/code/csfulop/tanulmanyi-versenyek-eredmenyelemzes
+
+## Elemzési Notebook
+
+Az adathalmaz mellett elérhető egy Jupyter notebook is, amely interaktív elemzési példákat tartalmaz. A notebook tartalmazza az iskolák és városok rangsorait, valamint iskola keresési funkciót.
 
 ## Licenc
 

@@ -119,7 +119,15 @@ License: CC BY 4.0
 
 ## Contact & Feedback
 
-For questions, corrections, or suggestions regarding this dataset, please open an issue on the GitHub repository or contact via Kaggle.
+For questions, corrections, or suggestions:
+
+- **GitHub Repository:** https://github.com/csfulop/tanulmanyi-versenyek
+- **Kaggle Dataset:** https://www.kaggle.com/datasets/csfulop/tanulmanyi-versenyek
+- **Kaggle Notebook:** https://www.kaggle.com/code/csfulop/tanulmanyi-versenyek-eredmenyelemzes
+
+## Analysis Notebook
+
+An analysis Jupyter notebook with interactive exploration examples is available alongside this dataset. The notebook includes school and city rankings, as well as school search functionality.
 
 ## License
 
