@@ -129,6 +129,38 @@ For questions, corrections, or suggestions:
 
 An analysis Jupyter notebook with interactive exploration examples is available alongside this dataset. The notebook includes school and city rankings, as well as school search functionality.
 
+## Known Data Quality Limitations
+
+### School and City Name Inconsistencies
+
+This dataset contains school and city names **exactly as they appear on the official competition website**. This results in the following inconsistencies:
+
+**1. City Name Variations:**
+- The same school may appear with different city name variations across years
+- Examples: "Budapest" vs "Budapest VII.", "Debrecen" vs "Debrecen-Józsa", "MISKOLC" vs "Miskolc"
+- **Affected schools**: 15
+
+**2. School Name Changes:**
+- Schools' official names may change over time (reorganization, renaming)
+- Minor variations in spelling or abbreviations
+- Example: "Baár-Madas Református Gimnázium és Általános Iskola" vs "Baár-Madas Református Gimnázium, Általános Iskola és Kollégium"
+- **Affected school groups**: 70+
+
+**Impact on Rankings:**
+- The same school may appear multiple times in rankings with different name variations
+- Rankings thus provide a **lower bound estimate** of schools' performance
+- Actual rankings may be higher if all name variations were consolidated
+
+**Why We Didn't Fix This:**
+- Data faithfully reflects the source (authenticity)
+- Determining the "correct" name would be subjective
+- Future versions may include normalization
+
+**Recommendations for Users:**
+- Use partial name search to find schools
+- Be aware that rankings are conservative estimates
+- Check all name variations of a school for complete results
+
 ## License
 
 This dataset is licensed under **Creative Commons Attribution 4.0 International (CC BY 4.0)**.

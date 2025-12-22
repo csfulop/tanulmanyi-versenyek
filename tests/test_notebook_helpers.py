@@ -11,6 +11,17 @@ import pandas as pd
 
 # === HELPER FUNCTIONS ===
 
+def hungarian_sort_key(text):
+    """Convert Hungarian text to sortable form by normalizing accented characters."""
+    if not isinstance(text, str):
+        return text
+    HUNGARIAN_SORT_MAP = str.maketrans(
+        'aáeéiíoóöőuúüűAÁEÉIÍOÓÖŐUÚÜŰ',
+        'aaeeiioooouuuuAAEEIIOOOOUUUU'
+    )
+    return text.translate(HUNGARIAN_SORT_MAP)
+
+
 def filter_data(df, grade_filter, year_filter):
     """Filter dataframe by grade and year."""
     filtered = df.copy()
@@ -38,14 +49,27 @@ def filter_data(df, grade_filter, year_filter):
 def calculate_count_ranking(df, top_x, group_by):
     """Count appearances in top X positions."""
     top_df = df[df['helyezes'] <= top_x].copy()
-    
+
     if group_by == 'iskola_nev':
-        result = top_df.groupby(['iskola_nev', 'varos']).size().reset_index(name='Count')
-        result = result.sort_values('Count', ascending=False).reset_index(drop=True)
+        # Count by school only
+        result = top_df.groupby('iskola_nev').size().reset_index(name='Count')
+        # Add most common city for each school
+        city_map = top_df.groupby('iskola_nev')['varos'].agg(lambda x: x.mode()[0] if len(x.mode()) > 0 else x.iloc[0])
+        result['varos'] = result['iskola_nev'].map(city_map)
+        result = result[['iskola_nev', 'varos', 'Count']]
+        result = result.sort_values(
+            ['Count', 'iskola_nev'],
+            ascending=[False, True],
+            key=lambda col: col.map(hungarian_sort_key) if col.name == 'iskola_nev' else col
+        ).reset_index(drop=True)
     else:  # group_by == 'varos'
         result = top_df.groupby('varos').size().reset_index(name='Count')
-        result = result.sort_values('Count', ascending=False).reset_index(drop=True)
-    
+        result = result.sort_values(
+            ['Count', 'varos'],
+            ascending=[False, True],
+            key=lambda col: col.map(hungarian_sort_key) if col.name == 'varos' else col
+        ).reset_index(drop=True)
+
     return result
 
 
@@ -54,14 +78,27 @@ def calculate_weighted_ranking(df, top_x, group_by):
     scored_df = df.copy()
     scored_df['points'] = scored_df['helyezes'].apply(lambda x: max(0, top_x - x + 1))
     scored_df = scored_df[scored_df['points'] > 0]
-    
+
     if group_by == 'iskola_nev':
-        result = scored_df.groupby(['iskola_nev', 'varos'])['points'].sum().reset_index(name='Weighted Score')
-        result = result.sort_values('Weighted Score', ascending=False).reset_index(drop=True)
+        # Sum points by school only
+        result = scored_df.groupby('iskola_nev')['points'].sum().reset_index(name='Weighted Score')
+        # Add most common city for each school
+        city_map = scored_df.groupby('iskola_nev')['varos'].agg(lambda x: x.mode()[0] if len(x.mode()) > 0 else x.iloc[0])
+        result['varos'] = result['iskola_nev'].map(city_map)
+        result = result[['iskola_nev', 'varos', 'Weighted Score']]
+        result = result.sort_values(
+            ['Weighted Score', 'iskola_nev'],
+            ascending=[False, True],
+            key=lambda col: col.map(hungarian_sort_key) if col.name == 'iskola_nev' else col
+        ).reset_index(drop=True)
     else:  # group_by == 'varos'
         result = scored_df.groupby('varos')['points'].sum().reset_index(name='Weighted Score')
-        result = result.sort_values('Weighted Score', ascending=False).reset_index(drop=True)
-    
+        result = result.sort_values(
+            ['Weighted Score', 'varos'],
+            ascending=[False, True],
+            key=lambda col: col.map(hungarian_sort_key) if col.name == 'varos' else col
+        ).reset_index(drop=True)
+
     return result
 
 
@@ -271,3 +308,194 @@ def test_fixture_structure(sample_df):
     assert len(sample_df) == 10
     assert list(sample_df.columns) == ['ev', 'targy', 'iskola_nev', 'varos', 'megye', 'helyezes', 'evfolyam']
     assert sample_df['targy'].unique().tolist() == ['Anyanyelv']
+
+
+# === TESTS FOR hungarian_sort_key() ===
+
+def test_hungarian_sort_key_basic():
+    """Test that Hungarian accented characters are normalized."""
+    assert hungarian_sort_key('Város') == 'Varos'
+    assert hungarian_sort_key('Pécs') == 'Pecs'
+    assert hungarian_sort_key('Győr') == 'Gyor'
+
+
+def test_hungarian_sort_key_all_accents():
+    """Test all Hungarian accented characters."""
+    assert hungarian_sort_key('aáeéiíoóöőuúüű') == 'aaeeiioooouuuu'
+    assert hungarian_sort_key('AÁEÉIÍOÓÖŐUÚÜŰ') == 'AAEEIIOOOOUUUU'
+
+
+def test_hungarian_sort_key_non_string():
+    """Test that non-string values are returned as-is."""
+    assert hungarian_sort_key(123) == 123
+    assert hungarian_sort_key(None) is None
+
+
+def test_hungarian_sort_key_mixed_text():
+    """Test text with mixed accented and non-accented characters."""
+    assert hungarian_sort_key('Veszprém') == 'Veszprem'
+    assert hungarian_sort_key('Debrecen') == 'Debrecen'
+
+
+# === TESTS FOR city grouping fix ===
+
+def test_count_ranking_school_with_multiple_cities():
+    """Test that schools with multiple city names are counted together."""
+    df = pd.DataFrame({
+        'ev': ['2023-24'] * 6,
+        'targy': ['Anyanyelv'] * 6,
+        'iskola_nev': ['School A'] * 6,
+        'varos': ['Budapest', 'Budapest II.', 'Budapest', 'Budapest II.', 'Budapest', 'Budapest II.'],
+        'megye': [''] * 6,
+        'helyezes': [1, 2, 3, 4, 5, 6],
+        'evfolyam': [8] * 6
+    })
+
+    result = calculate_count_ranking(df, 6, 'iskola_nev')
+
+    assert len(result) == 1
+    assert result.iloc[0]['iskola_nev'] == 'School A'
+    assert result.iloc[0]['Count'] == 6
+    assert result.iloc[0]['varos'] in ['Budapest', 'Budapest II.']
+
+
+def test_count_ranking_school_most_common_city():
+    """Test that the most common city is selected for display."""
+    df = pd.DataFrame({
+        'ev': ['2023-24'] * 6,
+        'targy': ['Anyanyelv'] * 6,
+        'iskola_nev': ['School A'] * 6,
+        'varos': ['Budapest II.', 'Budapest II.', 'Budapest II.', 'Budapest II.', 'Budapest', 'Budapest'],
+        'megye': [''] * 6,
+        'helyezes': [1, 2, 3, 4, 5, 6],
+        'evfolyam': [8] * 6
+    })
+
+    result = calculate_count_ranking(df, 6, 'iskola_nev')
+
+    assert result.iloc[0]['varos'] == 'Budapest II.'
+
+
+def test_weighted_ranking_school_with_multiple_cities():
+    """Test that weighted ranking counts schools with multiple cities together."""
+    df = pd.DataFrame({
+        'ev': ['2023-24'] * 6,
+        'targy': ['Anyanyelv'] * 6,
+        'iskola_nev': ['School A'] * 6,
+        'varos': ['Budapest', 'Budapest II.', 'Budapest', 'Budapest II.', 'Budapest', 'Budapest II.'],
+        'megye': [''] * 6,
+        'helyezes': [1, 2, 3, 4, 5, 6],
+        'evfolyam': [8] * 6
+    })
+
+    result = calculate_weighted_ranking(df, 6, 'iskola_nev')
+
+    assert len(result) == 1
+    assert result.iloc[0]['iskola_nev'] == 'School A'
+    expected_score = 6 + 5 + 4 + 3 + 2 + 1
+    assert result.iloc[0]['Weighted Score'] == expected_score
+
+
+# === TESTS FOR tie-breaking with secondary sort ===
+
+def test_count_ranking_schools_tie_alphabetical():
+    """Test that schools with same count are sorted alphabetically."""
+    df = pd.DataFrame({
+        'ev': ['2023-24'] * 6,
+        'targy': ['Anyanyelv'] * 6,
+        'iskola_nev': ['Zebra School', 'Alpha School', 'Zebra School', 'Alpha School', 'Beta School', 'Beta School'],
+        'varos': ['Budapest'] * 6,
+        'megye': [''] * 6,
+        'helyezes': [1, 1, 2, 2, 1, 2],
+        'evfolyam': [8] * 6
+    })
+
+    result = calculate_count_ranking(df, 3, 'iskola_nev')
+
+    assert len(result) == 3
+    assert result.iloc[0]['iskola_nev'] == 'Alpha School'
+    assert result.iloc[1]['iskola_nev'] == 'Beta School'
+    assert result.iloc[2]['iskola_nev'] == 'Zebra School'
+
+
+def test_count_ranking_cities_tie_alphabetical():
+    """Test that cities with same count are sorted alphabetically."""
+    df = pd.DataFrame({
+        'ev': ['2023-24'] * 6,
+        'targy': ['Anyanyelv'] * 6,
+        'iskola_nev': ['School A', 'School B', 'School C', 'School D', 'School E', 'School F'],
+        'varos': ['Zalaegerszeg', 'Debrecen', 'Zalaegerszeg', 'Debrecen', 'Szeged', 'Szeged'],
+        'megye': [''] * 6,
+        'helyezes': [1, 1, 2, 2, 1, 2],
+        'evfolyam': [8] * 6
+    })
+
+    result = calculate_count_ranking(df, 3, 'varos')
+
+    assert len(result) == 3
+    assert result.iloc[0]['varos'] == 'Debrecen'
+    assert result.iloc[1]['varos'] == 'Szeged'
+    assert result.iloc[2]['varos'] == 'Zalaegerszeg'
+
+
+def test_weighted_ranking_schools_tie_alphabetical():
+    """Test that schools with same weighted score are sorted alphabetically."""
+    df = pd.DataFrame({
+        'ev': ['2023-24'] * 4,
+        'targy': ['Anyanyelv'] * 4,
+        'iskola_nev': ['Zebra School', 'Alpha School', 'Zebra School', 'Alpha School'],
+        'varos': ['Budapest'] * 4,
+        'megye': [''] * 4,
+        'helyezes': [1, 2, 2, 1],
+        'evfolyam': [8] * 4
+    })
+
+    result = calculate_weighted_ranking(df, 3, 'iskola_nev')
+
+    assert len(result) == 2
+    assert result.iloc[0]['iskola_nev'] == 'Alpha School'
+    assert result.iloc[1]['iskola_nev'] == 'Zebra School'
+
+
+# === TESTS FOR Hungarian alphabetical sorting ===
+
+def test_count_ranking_hungarian_alphabetical_order():
+    """Test that Hungarian accented characters are sorted correctly."""
+    df = pd.DataFrame({
+        'ev': ['2023-24'] * 4,
+        'targy': ['Anyanyelv'] * 4,
+        'iskola_nev': ['School A', 'School B', 'School C', 'School D'],
+        'varos': ['Veszprém', 'Valahol', 'Vác', 'Veresegyház'],
+        'megye': [''] * 4,
+        'helyezes': [1, 1, 1, 1],
+        'evfolyam': [8] * 4
+    })
+
+    result = calculate_count_ranking(df, 3, 'varos')
+
+    assert len(result) == 4
+    assert result.iloc[0]['varos'] == 'Vác'
+    assert result.iloc[1]['varos'] == 'Valahol'
+    assert result.iloc[2]['varos'] == 'Veresegyház'
+    assert result.iloc[3]['varos'] == 'Veszprém'
+
+
+def test_weighted_ranking_hungarian_alphabetical_order():
+    """Test Hungarian sorting in weighted rankings."""
+    df = pd.DataFrame({
+        'ev': ['2023-24'] * 4,
+        'targy': ['Anyanyelv'] * 4,
+        'iskola_nev': ['Pécs Gimnázium', 'Paks Gimnázium', 'Pápa Gimnázium', 'Pécel Gimnázium'],
+        'varos': ['Pécs', 'Paks', 'Pápa', 'Pécel'],
+        'megye': [''] * 4,
+        'helyezes': [1, 1, 1, 1],
+        'evfolyam': [8] * 4
+    })
+
+    result = calculate_weighted_ranking(df, 3, 'iskola_nev')
+
+    assert len(result) == 4
+    assert result.iloc[0]['iskola_nev'] == 'Paks Gimnázium'
+    assert result.iloc[1]['iskola_nev'] == 'Pápa Gimnázium'
+    assert result.iloc[2]['iskola_nev'] == 'Pécel Gimnázium'
+    assert result.iloc[3]['iskola_nev'] == 'Pécs Gimnázium'

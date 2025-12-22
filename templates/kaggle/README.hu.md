@@ -129,6 +129,38 @@ Kérdések, javítások vagy javaslatok esetén:
 
 Az adathalmaz mellett elérhető egy Jupyter notebook is, amely interaktív elemzési példákat tartalmaz. A notebook tartalmazza az iskolák és városok rangsorait, valamint iskola keresési funkciót.
 
+## Ismert adatminőségi korlátozások
+
+### Iskola- és városnevek következetlensége
+
+Az adathalmaz az iskolák és városok neveit **pontosan úgy tartalmazza, ahogy azok a verseny hivatalos weboldalán szerepelnek**. Ez az alábbi következetlenségeket eredményezi:
+
+**1. Városnevek variációi:**
+- Ugyanaz az iskola különböző években különböző városnév-változatokkal szerepelhet
+- Példák: "Budapest" vs "Budapest VII.", "Debrecen" vs "Debrecen-Józsa", "MISKOLC" vs "Miskolc"
+- **Érintett iskolák száma**: 15
+
+**2. Iskolanevek változásai:**
+- Az iskolák hivatalos neve idővel változhat (átszervezés, névváltoztatás)
+- Kisebb eltérések az írásmódban vagy rövidítésekben
+- Példa: "Baár-Madas Református Gimnázium és Általános Iskola" vs "Baár-Madas Református Gimnázium, Általános Iskola és Kollégium"
+- **Érintett iskolacsoportok száma**: 70+
+
+**Hatás a rangsorokra:**
+- Ugyanaz az iskola több névváltozattal is megjelenhet a rangsorokban
+- A rangsorok így **alsó becslést** adnak az iskolák teljesítményére
+- A valós helyezések magasabbak lehetnek, ha az összes névváltozatot összesítenénk
+
+**Miért nem javítottuk ki:**
+- Az adatok hűen tükrözik a forrást (hitelesség)
+- A "helyes" név meghatározása szubjektív lenne
+- A jövőbeli verziók tartalmazhatnak normalizálást
+
+**Javaslat felhasználóknak:**
+- Használj részleges névkeresést az iskolák megtalálásához
+- Vedd figyelembe, hogy a rangsorok konzervatív becslések
+- Ellenőrizd az iskola összes névváltozatát a pontos eredményekhez
+
 ## Licenc
 
 Ez az adathalmaz **Creative Commons Nevezd meg! 4.0 Nemzetközi (CC BY 4.0)** licenc alatt áll.
