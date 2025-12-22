@@ -2,14 +2,64 @@
 
 ## Dataset Description
 
-This dataset contains 10 years of historical results from the **Bolyai Hungarian Mother Tongue Team Competition** (Bolyai Anyanyelvi Csapatverseny), one of Hungary's most prestigious academic competitions for elementary and middle school students.
+This dataset contains 10 years of historical results from the **Bolyai Hungarian Mother Tongue Team Competition** (Bolyai Anyanyelvi Csapatverseny), one of Hungary's most prestigious elementary and high school academic competitions.
 
-The competition is organized annually for students in grades 3-8, testing their Hungarian language skills through team-based challenges. This dataset includes results from both written finals (Írásbeli döntő) and oral finals (Szóbeli döntő) from the 2015-16 through 2024-25 academic years.
+**What's Inside:**
+- 3,233 competition results from 2015-16 to 2024-25
+- 766 different schools from 264 cities across Hungary
+- Team rankings for grades 3-8
+- Both written finals (Írásbeli döntő) and oral finals (Szóbeli döntő)
+- Interactive Jupyter notebook for data exploration
+- Bilingual documentation (Hungarian and English)
 
-**Total Records**: 3,233 unique competition results  
-**Schools Represented**: 766 different schools  
-**Cities Covered**: 264 cities across Hungary  
-**Time Period**: 10 academic years (2015-16 to 2024-25)
+**Context:**
+The Bolyai Competition tests Hungarian language skills through team-based challenges, organized annually for students in grades 3-8. This dataset represents a decade of competitive academic achievement in Hungary's education system.
+
+**Use Cases:**
+- Analyze school performance trends over time
+- Compare regional educational outcomes
+- Identify top-performing schools and cities
+- Study competition participation patterns
+- Educational data visualization projects
+
+## Files in This Dataset
+
+### `master_bolyai_anyanyelv.csv`
+Complete dataset of Bolyai Mother Tongue Competition results (2015-2025). Contains 3,233 records with school names, cities, rankings, grades, and academic years. Semicolon-separated format, UTF-8 encoding. Main data file for analysis.
+
+### `README.hu.md`
+Hungarian language documentation. Includes dataset description, data collection methodology, column definitions, usage examples, known data quality limitations, and license information. Complete reference guide in Hungarian.
+
+### `README.en.md`
+English language documentation. Includes dataset description, data collection methodology, column definitions, usage examples, known data quality limitations, and license information. Complete reference guide in English.
+
+### `LICENSE`
+Creative Commons Attribution 4.0 International (CC BY 4.0) license. Specifies terms of use, attribution requirements, and permissions for the dataset. Free to use with proper attribution.
+
+## Data Provenance
+
+### Sources
+
+Official Bolyai Competition website: https://magyar.bolyaiverseny.hu/verseny/archivum/eredmenyek.php
+
+Data represents official competition results published by the organizers for public access.
+
+### Collection Methodology
+
+Automated web scraping using Python with Playwright library for browser automation and BeautifulSoup for HTML parsing.
+
+**Process:**
+1. Automated navigation through competition result pages for all academic years (2015-16 to 2024-25) and grade levels (3-8)
+2. Respectful data collection with 5-second delays between requests to avoid server overload
+3. HTML table extraction and parsing into structured format
+4. Three-stage pipeline: (a) raw HTML download, (b) data extraction and normalization, (c) merging and deduplication
+5. Quality validation: automated checks for completeness and consistency
+
+**Deduplication logic:** Oral finals results (final placements) take precedence over written finals results (preliminary placements) when both exist for the same team.
+
+**Output:** Semicolon-separated CSV file with UTF-8 encoding.
+
+**Collection date:** December 2025
 
 ## Dataset Structure
 

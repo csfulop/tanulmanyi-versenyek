@@ -4,12 +4,62 @@
 
 Ez az adathalmaz a **Bolyai Anyanyelvi Csapatverseny** 10 évnyi történelmi eredményét tartalmazza, amely Magyarország egyik legrangosabb általános és középiskolai tanulmányi versenye.
 
-A versenyt évente rendezik meg 3-8. osztályos tanulók számára, csapatmunkában tesztelve a magyar nyelvi készségeiket. Az adathalmaz az írásbeli döntő és a szóbeli döntő eredményeit tartalmazza a 2015-16-os tanévtől a 2024-25-ös tanévig.
+**Mit tartalmaz:**
+- 3233 versenyeredmény a 2015-16-os és 2024-25-ös tanévek között
+- 766 különböző iskola 264 városból Magyarország-szerte
+- Csapat helyezések 3-8. osztályos kategóriákban
+- Írásbeli döntő és szóbeli döntő eredményei
+- Interaktív Jupyter notebook az adatok feltárásához
+- Kétnyelvű dokumentáció (magyar és angol)
 
-**Összes rekord**: 3233 egyedi versenyeredmény  
-**Képviselt iskolák**: 766 különböző iskola  
-**Lefedett városok**: 264 város Magyarország-szerte  
-**Időszak**: 10 tanév (2015-16-tól 2024-25-ig)
+**Kontextus:**
+A Bolyai Verseny a magyar nyelvi készségeket teszteli csapatmunka alapú feladatokkal, évente megrendezve 3-8. osztályos tanulók számára. Ez az adathalmaz egy évtized versenyteljesítményét reprezentálja a magyar oktatási rendszerben.
+
+**Felhasználási lehetőségek:**
+- Iskolák teljesítményének elemzése időben
+- Regionális oktatási eredmények összehasonlítása
+- Legjobban teljesítő iskolák és városok azonosítása
+- Verseny részvételi minták tanulmányozása
+- Oktatási adatvizualizációs projektek
+
+## Fájlok az adathalmazban
+
+### `master_bolyai_anyanyelv.csv`
+A Bolyai Anyanyelvi Csapatverseny teljes eredményhalmaza (2015-2025). 3233 rekordot tartalmaz iskolanevekkel, városokkal, helyezésekkel, évfolyamokkal és tanévekkel. Pontosvesszővel elválasztott formátum, UTF-8 kódolás. Fő adatfájl az elemzéshez.
+
+### `README.hu.md`
+Magyar nyelvű dokumentáció. Tartalmazza az adathalmaz leírását, adatgyűjtési módszertant, oszlopdefiníciókat, használati példákat, ismert adatminőségi korlátozásokat és licencinformációkat. Teljes referencia útmutató magyarul.
+
+### `README.en.md`
+Angol nyelvű dokumentáció. Tartalmazza az adathalmaz leírását, adatgyűjtési módszertant, oszlopdefiníciókat, használati példákat, ismert adatminőségi korlátozásokat és licencinformációkat. Teljes referencia útmutató angolul.
+
+### `LICENSE`
+Creative Commons Nevezd meg! 4.0 Nemzetközi (CC BY 4.0) licenc. Meghatározza a használati feltételeket, forrásmegjelölési követelményeket és az adathalmaz engedélyeit. Szabadon használható megfelelő forrásmegjelöléssel.
+
+## Adatok eredete és gyűjtése
+
+### Források
+
+A Bolyai Verseny hivatalos weboldala: https://magyar.bolyaiverseny.hu/verseny/archivum/eredmenyek.php
+
+Az adatok a szervezők által nyilvánosan közzétett hivatalos versenyeredményeket reprezentálják.
+
+### Gyűjtési módszertan
+
+Automatizált webgyűjtés Python használatával, Playwright könyvtárral a böngésző automatizáláshoz és BeautifulSoup-pal a HTML feldolgozáshoz.
+
+**Folyamat:**
+1. Automatizált navigáció a versenyeredmény oldalakon az összes tanévre (2015-16-tól 2024-25-ig) és évfolyamra (3-8. osztály)
+2. Udvarias adatgyűjtés 5 másodperces késleltetéssel a lekérések között a szerver túlterhelésének elkerülése érdekében
+3. HTML táblázatok kinyerése és strukturált formátumba alakítása
+4. Háromfázisú feldolgozási folyamat: (a) nyers HTML letöltés, (b) adatkinyerés és normalizálás, (c) összevonás és duplikáció-szűrés
+5. Minőségellenőrzés: automatikus ellenőrzések a teljesség és konzisztencia biztosítására
+
+**Duplikáció-szűrési logika:** A szóbeli döntő eredményei (végleges helyezések) elsőbbséget élveznek az írásbeli döntő eredményeivel (előzetes helyezések) szemben, ha mindkettő létezik ugyanarra a csapatra.
+
+**Kimenet:** Pontosvesszővel elválasztott CSV fájl UTF-8 kódolással.
+
+**Gyűjtés dátuma:** 2025. december
 
 ## Adathalmaz szerkezete
 
