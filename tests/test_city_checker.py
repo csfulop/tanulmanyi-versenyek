@@ -2,12 +2,17 @@
 
 import logging
 
+import pandas as pd
 import pytest
 
 from tanulmanyi_versenyek.validation.city_checker import (
     _is_valid_entry,
     _parse_mapping_csv,
-    load_city_mapping
+    load_city_mapping,
+    apply_city_mapping,
+    _detect_variations,
+    _build_allowed_combinations,
+    check_city_variations
 )
 
 
@@ -37,6 +42,43 @@ data;without;proper;columns"""
     csv_file = tmp_path / "malformed.csv"
     csv_file.write_text(csv_content, encoding='utf-8')
     return csv_file
+
+
+@pytest.fixture
+def sample_dataframe():
+    """Create a sample DataFrame for testing."""
+    return pd.DataFrame({
+        'iskola_nev': ['School A', 'School B', 'School C', 'School C', 'School D'],
+        'varos': ['CITY1', 'City2-Suburb', 'City3', 'City4', 'City5'],
+        'ev': ['2024-25', '2024-25', '2024-25', '2024-25', '2024-25']
+    })
+
+
+@pytest.fixture
+def sample_mapping():
+    """Create a sample mapping dictionary."""
+    return {
+        ('School A', 'CITY1'): {
+            'corrected_city': 'City1',
+            'comment': 'Normalize case',
+            'is_valid': False
+        },
+        ('School B', 'City2-Suburb'): {
+            'corrected_city': 'City2',
+            'comment': 'Map suburb',
+            'is_valid': False
+        },
+        ('School C', 'City3'): {
+            'corrected_city': '',
+            'comment': 'VALID - different schools',
+            'is_valid': True
+        },
+        ('School C', 'City4'): {
+            'corrected_city': '',
+            'comment': 'VALID - different schools',
+            'is_valid': True
+        }
+    }
 
 
 class TestIsValidEntry:
@@ -130,3 +172,181 @@ class TestLoadCityMapping:
         }
         mapping = load_city_mapping(config, logger)
         assert mapping == {}
+
+
+
+class TestApplyCityMapping:
+    """Tests for apply_city_mapping function."""
+
+    def test_apply_corrections(self, sample_dataframe, sample_mapping, logger):
+        corrected_df, count = apply_city_mapping(sample_dataframe, sample_mapping, logger)
+
+        assert count == 2
+        assert corrected_df.loc[0, 'varos'] == 'City1'
+        assert corrected_df.loc[1, 'varos'] == 'City2'
+        assert corrected_df.loc[2, 'varos'] == 'City3'
+        assert corrected_df.loc[3, 'varos'] == 'City4'
+
+    def test_apply_with_empty_mapping(self, sample_dataframe, logger):
+        corrected_df, count = apply_city_mapping(sample_dataframe, {}, logger)
+
+        assert count == 0
+        pd.testing.assert_frame_equal(corrected_df, sample_dataframe)
+
+    def test_apply_creates_copy(self, sample_dataframe, sample_mapping, logger):
+        original_city = sample_dataframe.loc[0, 'varos']
+        corrected_df, count = apply_city_mapping(sample_dataframe, sample_mapping, logger)
+
+        assert sample_dataframe.loc[0, 'varos'] == original_city
+        assert corrected_df.loc[0, 'varos'] != original_city
+
+    def test_apply_composite_key(self, logger):
+        df = pd.DataFrame({
+            'iskola_nev': ['School X', 'School X'],
+            'varos': ['CityA', 'CityB']
+        })
+        mapping = {
+            ('School X', 'CityA'): {'corrected_city': 'City A', 'comment': 'Fix', 'is_valid': False},
+            ('School X', 'CityB'): {'corrected_city': 'City B', 'comment': 'Fix', 'is_valid': False}
+        }
+
+        corrected_df, count = apply_city_mapping(df, mapping, logger)
+
+        assert count == 2
+        assert corrected_df.loc[0, 'varos'] == 'City A'
+        assert corrected_df.loc[1, 'varos'] == 'City B'
+
+
+class TestDetectVariations:
+    """Tests for _detect_variations function."""
+
+    def test_detect_with_variations(self):
+        df = pd.DataFrame({
+            'iskola_nev': ['School A', 'School A', 'School B'],
+            'varos': ['City1', 'City2', 'City3']
+        })
+
+        variations = _detect_variations(df)
+
+        assert len(variations) == 1
+        assert 'School A' in variations
+        assert variations['School A']['count'] == 2
+        assert set(variations['School A']['cities']) == {'City1', 'City2'}
+
+    def test_detect_no_variations(self):
+        df = pd.DataFrame({
+            'iskola_nev': ['School A', 'School B', 'School C'],
+            'varos': ['City1', 'City2', 'City3']
+        })
+
+        variations = _detect_variations(df)
+
+        assert len(variations) == 0
+
+    def test_detect_multiple_schools_with_variations(self):
+        df = pd.DataFrame({
+            'iskola_nev': ['School A', 'School A', 'School B', 'School B', 'School C'],
+            'varos': ['City1', 'City2', 'City3', 'City4', 'City5']
+        })
+
+        variations = _detect_variations(df)
+
+        assert len(variations) == 2
+        assert 'School A' in variations
+        assert 'School B' in variations
+        assert 'School C' not in variations
+
+
+class TestBuildAllowedCombinations:
+    """Tests for _build_allowed_combinations function."""
+
+    def test_build_with_valid_and_corrections(self):
+        mapping = {
+            ('School A', 'CITY1'): {'corrected_city': 'City1', 'comment': 'Fix', 'is_valid': False},
+            ('School B', 'City2'): {'corrected_city': '', 'comment': 'VALID', 'is_valid': True},
+            ('School C', 'City3'): {'corrected_city': 'City3Fixed', 'comment': 'Fix', 'is_valid': False}
+        }
+
+        allowed = _build_allowed_combinations(mapping)
+
+        assert len(allowed) == 3
+        assert ('School A', 'City1') in allowed
+        assert ('School B', 'City2') in allowed
+        assert ('School C', 'City3Fixed') in allowed
+        assert ('School A', 'CITY1') not in allowed
+
+    def test_build_empty_mapping(self):
+        allowed = _build_allowed_combinations({})
+        assert len(allowed) == 0
+
+
+class TestCheckCityVariations:
+    """Tests for check_city_variations function."""
+
+    def test_check_all_valid(self, sample_dataframe, sample_mapping, logger):
+        stats = check_city_variations(sample_dataframe, sample_mapping, logger)
+
+        assert stats['total_schools_with_variations'] == 1
+        assert stats['valid_combinations'] == 2
+        assert stats['unmapped_combinations'] == 0
+
+    def test_check_partially_mapped(self, logger):
+        df = pd.DataFrame({
+            'iskola_nev': ['School X', 'School X', 'School X'],
+            'varos': ['City1', 'City2', 'City3']
+        })
+        mapping = {
+            ('School X', 'OrigCity1'): {'corrected_city': 'City1', 'comment': 'Fix', 'is_valid': False},
+            ('School X', 'City2'): {'corrected_city': '', 'comment': 'VALID', 'is_valid': True}
+        }
+
+        stats = check_city_variations(df, mapping, logger)
+
+        assert stats['total_schools_with_variations'] == 1
+        assert stats['valid_combinations'] == 2
+        assert stats['unmapped_combinations'] == 1
+
+    def test_check_no_variations(self, logger):
+        df = pd.DataFrame({
+            'iskola_nev': ['School A', 'School B'],
+            'varos': ['City1', 'City2']
+        })
+
+        stats = check_city_variations(df, {}, logger)
+
+        assert stats['total_schools_with_variations'] == 0
+        assert stats['valid_combinations'] == 0
+        assert stats['unmapped_combinations'] == 0
+
+    def test_check_all_unmapped(self, logger):
+        df = pd.DataFrame({
+            'iskola_nev': ['School Y', 'School Y'],
+            'varos': ['CityA', 'CityB']
+        })
+
+        stats = check_city_variations(df, {}, logger)
+
+        assert stats['total_schools_with_variations'] == 1
+        assert stats['valid_combinations'] == 0
+        assert stats['unmapped_combinations'] == 2
+
+    def test_check_after_correction_no_false_warnings(self, logger):
+        """Test that corrected cities don't trigger warnings.
+
+        Scenario: School has typo 'citB' corrected to 'CityB'.
+        After correction, both entries show 'CityB'.
+        Should not warn about 'CityB' since it's in allowed combinations.
+        """
+        df_after_correction = pd.DataFrame({
+            'iskola_nev': ['School A', 'School A'],
+            'varos': ['CityB', 'CityB']
+        })
+        mapping = {
+            ('School A', 'citB'): {'corrected_city': 'CityB', 'comment': 'Fix typo', 'is_valid': False}
+        }
+
+        stats = check_city_variations(df_after_correction, mapping, logger)
+
+        assert stats['total_schools_with_variations'] == 0
+        assert stats['valid_combinations'] == 0
+        assert stats['unmapped_combinations'] == 0
