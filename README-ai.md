@@ -94,3 +94,5 @@ Remember to follow our established workflow precisely:
 5. Only then can you ask to proceed to the next step.
 
 And also remember to follow the project specific rules.
+
+As a warm up step, please read mentioned docs and give me a quick overview of this project and the tasks ahead of us.
