@@ -4,6 +4,9 @@ from tanulmanyi_versenyek.common import config
 from tanulmanyi_versenyek.common import logger
 from tanulmanyi_versenyek.scraper.bolyai_downloader import WebsiteDownloader
 
+log = logging.getLogger('01_raw_downloader')
+
+
 def slugify(text):
     """Convert text to a filename-safe slug."""
     return text.lower().replace(" ", "-").replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ö", "o").replace("ő", "o").replace("ú", "u").replace("ü", "u").replace("ű", "u")
@@ -14,7 +17,6 @@ def main():
     Downloads HTML files for all year/grade/round combinations.
     """
     logger.setup_logging()
-    log = logging.getLogger(__name__)
     log.info("Script starting: 01_raw_downloader.py")
 
     try:
@@ -33,7 +35,7 @@ def main():
         skipped = 0
         unavailable = 0
 
-        with WebsiteDownloader(cfg, log) as downloader:
+        with WebsiteDownloader(cfg) as downloader:
             years = downloader.get_available_years()
             log.info(f"Found {len(years)} years to process: {years}")
 

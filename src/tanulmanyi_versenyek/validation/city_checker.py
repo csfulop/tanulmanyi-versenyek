@@ -6,18 +6,19 @@ from typing import Dict, Tuple
 
 import pandas as pd
 
+log = logging.getLogger(__name__.split('.')[-1])
+
 
 def _is_valid_entry(comment: str) -> bool:
     """Check if mapping entry is marked as VALID (no correction needed)."""
     return "VALID" in comment.upper()
 
 
-def _parse_mapping_csv(filepath: Path, log: logging.Logger) -> Dict[Tuple[str, str], dict]:
+def _parse_mapping_csv(filepath: Path) -> Dict[Tuple[str, str], dict]:
     """Parse city mapping CSV file into dictionary.
 
     Args:
         filepath: Path to city_mapping.csv
-        log: Logger instance
 
     Returns:
         Dictionary keyed by (school_name, original_city) with values:
@@ -50,12 +51,11 @@ def _parse_mapping_csv(filepath: Path, log: logging.Logger) -> Dict[Tuple[str, s
     return mapping
 
 
-def load_city_mapping(config: dict, log: logging.Logger) -> Dict[Tuple[str, str], dict]:
+def load_city_mapping(config: dict) -> Dict[Tuple[str, str], dict]:
     """Load city mapping configuration from CSV file.
 
     Args:
         config: Configuration dictionary
-        log: Logger instance
 
     Returns:
         Dictionary of city mappings, empty dict if file missing or error
@@ -70,19 +70,18 @@ def load_city_mapping(config: dict, log: logging.Logger) -> Dict[Tuple[str, str]
         log.info(f"No city mapping file found at {filepath}, skipping corrections")
         return {}
 
-    mapping = _parse_mapping_csv(filepath, log)
+    mapping = _parse_mapping_csv(filepath)
     if mapping:
         log.info(f"Loaded {len(mapping)} city mappings from {filepath}")
     return mapping
 
 
-def apply_city_mapping(df: pd.DataFrame, mapping: Dict[Tuple[str, str], dict], log: logging.Logger) -> Tuple[pd.DataFrame, int]:
+def apply_city_mapping(df: pd.DataFrame, mapping: Dict[Tuple[str, str], dict]) -> Tuple[pd.DataFrame, int]:
     """Apply city name corrections to DataFrame.
 
     Args:
         df: DataFrame with 'iskola_nev' and 'varos' columns
         mapping: City mapping dictionary from load_city_mapping()
-        log: Logger instance
 
     Returns:
         Tuple of (corrected DataFrame, number of corrections applied)
@@ -150,13 +149,12 @@ def _build_allowed_combinations(mapping: Dict[Tuple[str, str], dict]) -> set:
     return allowed
 
 
-def check_city_variations(df: pd.DataFrame, mapping: Dict[Tuple[str, str], dict], log: logging.Logger) -> dict:
+def check_city_variations(df: pd.DataFrame, mapping: Dict[Tuple[str, str], dict]) -> dict:
     """Check for unmapped city variations and log warnings.
 
     Args:
         df: DataFrame with 'iskola_nev' and 'varos' columns (after corrections applied)
         mapping: City mapping dictionary from load_city_mapping()
-        log: Logger instance
 
     Returns:
         Statistics dictionary with:
@@ -191,3 +189,31 @@ def check_city_variations(df: pd.DataFrame, mapping: Dict[Tuple[str, str], dict]
         'valid_combinations': valid_count,
         'unmapped_combinations': unmapped_count
     }
+
+
+def main():
+    """Standalone execution: check city variations in master dataset."""
+    from tanulmanyi_versenyek.common.config import get_config
+    from tanulmanyi_versenyek.common.logger import setup_logging
+
+    setup_logging()
+    log.info("Starting standalone city variation check")
+
+    config = get_config()
+    master_csv_path = Path(config['paths']['master_csv'])
+
+    if not master_csv_path.exists():
+        log.error(f"Master CSV not found at {master_csv_path}")
+        return
+
+    log.info(f"Loading master CSV from {master_csv_path}")
+    df = pd.read_csv(master_csv_path, sep=';', encoding='utf-8')
+
+    mapping = load_city_mapping(config)
+    stats = check_city_variations(df, mapping)
+
+    log.info(f"Check complete: {stats}")
+
+
+if __name__ == "__main__":
+    main()

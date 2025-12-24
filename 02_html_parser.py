@@ -4,6 +4,8 @@ from tanulmanyi_versenyek.common import config
 from tanulmanyi_versenyek.common import logger
 from tanulmanyi_versenyek.parser.html_parser import HtmlTableParser
 
+log = logging.getLogger('02_html_parser')
+
 
 def main():
     """
@@ -11,7 +13,6 @@ def main():
     Parses all HTML files from raw_html directory and saves as CSV files.
     """
     logger.setup_logging()
-    log = logging.getLogger(__name__)
     log.info("Script starting: 02_html_parser.py")
 
     try:
@@ -53,7 +54,7 @@ def main():
                 log.info(f"Parsing: {html_file.name}")
                 
                 # Parse HTML file
-                parser = HtmlTableParser(html_file, cfg, log)
+                parser = HtmlTableParser(html_file, cfg)
                 df = parser.parse()
 
                 # Save to CSV with semicolon delimiter and UTF-8 encoding

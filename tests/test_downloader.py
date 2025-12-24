@@ -16,7 +16,7 @@ def downloader_with_config():
     Uses 'module' scope to ensure browser is launched/closed once per test module.
     """
     config = get_config()
-    with WebsiteDownloader(config=config, logger=test_logger) as downloader:
+    with WebsiteDownloader(config=config) as downloader:
         yield downloader
 
 def test_get_available_years_from_local_html(downloader_with_config):

@@ -1,7 +1,5 @@
 """Unit tests for city_checker module."""
 
-import logging
-
 import pandas as pd
 import pytest
 
@@ -14,12 +12,6 @@ from tanulmanyi_versenyek.validation.city_checker import (
     _build_allowed_combinations,
     check_city_variations
 )
-
-
-@pytest.fixture
-def logger():
-    """Create a logger for testing."""
-    return logging.getLogger('test')
 
 
 @pytest.fixture
@@ -103,8 +95,8 @@ class TestIsValidEntry:
 class TestParseMappingCsv:
     """Tests for _parse_mapping_csv function."""
 
-    def test_parse_valid_csv(self, valid_csv_file, logger):
-        mapping = _parse_mapping_csv(valid_csv_file, logger)
+    def test_parse_valid_csv(self, valid_csv_file):
+        mapping = _parse_mapping_csv(valid_csv_file)
 
         assert len(mapping) == 3
         assert ('School A', 'CITY1') in mapping
@@ -119,58 +111,58 @@ class TestParseMappingCsv:
         assert mapping[('School C', 'City3')]['corrected_city'] == ''
         assert mapping[('School C', 'City3')]['is_valid']
 
-    def test_parse_missing_file(self, tmp_path, logger):
+    def test_parse_missing_file(self, tmp_path):
         non_existent = tmp_path / "missing.csv"
-        mapping = _parse_mapping_csv(non_existent, logger)
+        mapping = _parse_mapping_csv(non_existent)
         assert mapping == {}
 
-    def test_parse_malformed_csv(self, malformed_csv_file, logger):
-        mapping = _parse_mapping_csv(malformed_csv_file, logger)
+    def test_parse_malformed_csv(self, malformed_csv_file):
+        mapping = _parse_mapping_csv(malformed_csv_file)
         assert mapping == {}
 
 
 class TestLoadCityMapping:
     """Tests for load_city_mapping function."""
 
-    def test_load_with_valid_file(self, valid_csv_file, logger):
+    def test_load_with_valid_file(self, valid_csv_file):
         config = {
             'validation': {
                 'city_mapping_file': str(valid_csv_file)
             }
         }
-        mapping = load_city_mapping(config, logger)
+        mapping = load_city_mapping(config)
 
         assert len(mapping) == 3
         assert ('School A', 'CITY1') in mapping
         assert ('School B', 'City2-Suburb') in mapping
         assert ('School C', 'City3') in mapping
 
-    def test_load_missing_file(self, tmp_path, logger):
+    def test_load_missing_file(self, tmp_path):
         config = {
             'validation': {
                 'city_mapping_file': str(tmp_path / "nonexistent.csv")
             }
         }
-        mapping = load_city_mapping(config, logger)
+        mapping = load_city_mapping(config)
         assert mapping == {}
 
-    def test_load_no_config(self, logger):
+    def test_load_no_config(self):
         config = {}
-        mapping = load_city_mapping(config, logger)
+        mapping = load_city_mapping(config)
         assert mapping == {}
 
-    def test_load_no_validation_section(self, logger):
+    def test_load_no_validation_section(self):
         config = {'other': 'data'}
-        mapping = load_city_mapping(config, logger)
+        mapping = load_city_mapping(config)
         assert mapping == {}
 
-    def test_load_malformed_csv(self, malformed_csv_file, logger):
+    def test_load_malformed_csv(self, malformed_csv_file):
         config = {
             'validation': {
                 'city_mapping_file': str(malformed_csv_file)
             }
         }
-        mapping = load_city_mapping(config, logger)
+        mapping = load_city_mapping(config)
         assert mapping == {}
 
 
@@ -178,8 +170,8 @@ class TestLoadCityMapping:
 class TestApplyCityMapping:
     """Tests for apply_city_mapping function."""
 
-    def test_apply_corrections(self, sample_dataframe, sample_mapping, logger):
-        corrected_df, count = apply_city_mapping(sample_dataframe, sample_mapping, logger)
+    def test_apply_corrections(self, sample_dataframe, sample_mapping):
+        corrected_df, count = apply_city_mapping(sample_dataframe, sample_mapping)
 
         assert count == 2
         assert corrected_df.loc[0, 'varos'] == 'City1'
@@ -187,20 +179,20 @@ class TestApplyCityMapping:
         assert corrected_df.loc[2, 'varos'] == 'City3'
         assert corrected_df.loc[3, 'varos'] == 'City4'
 
-    def test_apply_with_empty_mapping(self, sample_dataframe, logger):
-        corrected_df, count = apply_city_mapping(sample_dataframe, {}, logger)
+    def test_apply_with_empty_mapping(self, sample_dataframe):
+        corrected_df, count = apply_city_mapping(sample_dataframe, {})
 
         assert count == 0
         pd.testing.assert_frame_equal(corrected_df, sample_dataframe)
 
-    def test_apply_creates_copy(self, sample_dataframe, sample_mapping, logger):
+    def test_apply_creates_copy(self, sample_dataframe, sample_mapping):
         original_city = sample_dataframe.loc[0, 'varos']
-        corrected_df, count = apply_city_mapping(sample_dataframe, sample_mapping, logger)
+        corrected_df, count = apply_city_mapping(sample_dataframe, sample_mapping)
 
         assert sample_dataframe.loc[0, 'varos'] == original_city
         assert corrected_df.loc[0, 'varos'] != original_city
 
-    def test_apply_composite_key(self, logger):
+    def test_apply_composite_key(self):
         df = pd.DataFrame({
             'iskola_nev': ['School X', 'School X'],
             'varos': ['CityA', 'CityB']
@@ -210,7 +202,7 @@ class TestApplyCityMapping:
             ('School X', 'CityB'): {'corrected_city': 'City B', 'comment': 'Fix', 'is_valid': False}
         }
 
-        corrected_df, count = apply_city_mapping(df, mapping, logger)
+        corrected_df, count = apply_city_mapping(df, mapping)
 
         assert count == 2
         assert corrected_df.loc[0, 'varos'] == 'City A'
@@ -283,14 +275,14 @@ class TestBuildAllowedCombinations:
 class TestCheckCityVariations:
     """Tests for check_city_variations function."""
 
-    def test_check_all_valid(self, sample_dataframe, sample_mapping, logger):
-        stats = check_city_variations(sample_dataframe, sample_mapping, logger)
+    def test_check_all_valid(self, sample_dataframe, sample_mapping):
+        stats = check_city_variations(sample_dataframe, sample_mapping)
 
         assert stats['total_schools_with_variations'] == 1
         assert stats['valid_combinations'] == 2
         assert stats['unmapped_combinations'] == 0
 
-    def test_check_partially_mapped(self, logger):
+    def test_check_partially_mapped(self):
         df = pd.DataFrame({
             'iskola_nev': ['School X', 'School X', 'School X'],
             'varos': ['City1', 'City2', 'City3']
@@ -300,37 +292,37 @@ class TestCheckCityVariations:
             ('School X', 'City2'): {'corrected_city': '', 'comment': 'VALID', 'is_valid': True}
         }
 
-        stats = check_city_variations(df, mapping, logger)
+        stats = check_city_variations(df, mapping)
 
         assert stats['total_schools_with_variations'] == 1
         assert stats['valid_combinations'] == 2
         assert stats['unmapped_combinations'] == 1
 
-    def test_check_no_variations(self, logger):
+    def test_check_no_variations(self):
         df = pd.DataFrame({
             'iskola_nev': ['School A', 'School B'],
             'varos': ['City1', 'City2']
         })
 
-        stats = check_city_variations(df, {}, logger)
+        stats = check_city_variations(df, {})
 
         assert stats['total_schools_with_variations'] == 0
         assert stats['valid_combinations'] == 0
         assert stats['unmapped_combinations'] == 0
 
-    def test_check_all_unmapped(self, logger):
+    def test_check_all_unmapped(self):
         df = pd.DataFrame({
             'iskola_nev': ['School Y', 'School Y'],
             'varos': ['CityA', 'CityB']
         })
 
-        stats = check_city_variations(df, {}, logger)
+        stats = check_city_variations(df, {})
 
         assert stats['total_schools_with_variations'] == 1
         assert stats['valid_combinations'] == 0
         assert stats['unmapped_combinations'] == 2
 
-    def test_check_after_correction_no_false_warnings(self, logger):
+    def test_check_after_correction_no_false_warnings(self):
         """Test that corrected cities don't trigger warnings.
 
         Scenario: School has typo 'citB' corrected to 'CityB'.
@@ -345,7 +337,7 @@ class TestCheckCityVariations:
             ('School A', 'citB'): {'corrected_city': 'CityB', 'comment': 'Fix typo', 'is_valid': False}
         }
 
-        stats = check_city_variations(df_after_correction, mapping, logger)
+        stats = check_city_variations(df_after_correction, mapping)
 
         assert stats['total_schools_with_variations'] == 0
         assert stats['valid_combinations'] == 0

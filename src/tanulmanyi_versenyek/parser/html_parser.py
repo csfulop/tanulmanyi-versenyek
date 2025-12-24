@@ -4,24 +4,24 @@ from pathlib import Path
 import pandas as pd
 from bs4 import BeautifulSoup
 
+log = logging.getLogger(__name__.split('.')[-1])
+
 
 class HtmlTableParser:
     """
     Parses HTML files containing Bolyai competition results into structured DataFrames.
     """
 
-    def __init__(self, html_file_path: Path, config: dict, logger: logging.Logger):
+    def __init__(self, html_file_path: Path, config: dict):
         """
         Initialize the parser with a path to an HTML file.
 
         Args:
             html_file_path: Path to the HTML file to parse
             config: Configuration dictionary
-            logger: Logger instance for logging
         """
         self.html_file_path = html_file_path
         self.config = config
-        self.logger = logger
 
     def _parse_metadata_from_filename(self, filename: str) -> dict:
         """
@@ -71,7 +71,7 @@ class HtmlTableParser:
         Returns:
             DataFrame with parsed competition results
         """
-        self.logger.info(f"Parsing HTML file: {self.html_file_path.name}")
+        log.info(f"Parsing HTML file: {self.html_file_path.name}")
         
         # Extract metadata from filename
         metadata = self._parse_metadata_from_filename(self.html_file_path.name)
@@ -118,7 +118,7 @@ class HtmlTableParser:
         
         df = pd.DataFrame(rows)
         
-        self.logger.info(f"Extracted table with shape: {df.shape}")
+        log.info(f"Extracted table with shape: {df.shape}")
         
         # Clean and transform data
         df = self._clean_data(df, metadata)
@@ -157,7 +157,7 @@ class HtmlTableParser:
         result_df['iskola_nev'] = result_df['iskola_nev'].str.strip()
         result_df['varos'] = result_df['varos'].str.strip()
         
-        self.logger.info(f"Cleaned data: {len(result_df)} rows")
+        log.info(f"Cleaned data: {len(result_df)} rows")
         
         return result_df
 

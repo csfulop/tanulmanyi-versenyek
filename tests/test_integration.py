@@ -26,8 +26,7 @@ def live_data_dir():
 @pytest.fixture(scope="module")
 def downloader_with_config(config):
     """Provide WebsiteDownloader instance for live tests."""
-    test_logger = logging.getLogger(__name__)
-    with WebsiteDownloader(config=config, logger=test_logger) as downloader:
+    with WebsiteDownloader(config=config) as downloader:
         yield downloader
 
 
@@ -66,14 +65,13 @@ def test_end_to_end_download_and_parse(downloaded_html, config):
     2. Parse the downloaded HTML
     3. Verify output structure and data quality
     """
-    test_logger = logging.getLogger(__name__)
-    
+
     # Verify file was downloaded
     assert downloaded_html.exists(), f"Downloaded file not found: {downloaded_html}"
     assert downloaded_html.stat().st_size > 1000, "Downloaded file too small"
     
     # Parse the downloaded file
-    parser = HtmlTableParser(downloaded_html, config, test_logger)
+    parser = HtmlTableParser(downloaded_html, config)
     df = parser.parse()
     
     # Verify structure

@@ -3,13 +3,15 @@ import time
 from playwright.sync_api import sync_playwright, Page, BrowserContext, Browser
 from tanulmanyi_versenyek.common.config import get_config
 
+log = logging.getLogger(__name__.split('.')[-1])
+
+
 class WebsiteDownloader:
     """
     Manages Playwright browser lifecycle and provides methods for web scraping.
     """
-    def __init__(self, config: dict, logger: logging.Logger):
+    def __init__(self, config: dict):
         self.config = config
-        self.logger = logger
         self.playwright = None
         self.browser: Browser = None
         self.context: BrowserContext = None
@@ -19,28 +21,28 @@ class WebsiteDownloader:
         """
         Initializes Playwright, launches a browser, and creates a new page.
         """
-        self.logger.info("Initializing Playwright and launching browser...")
+        log.info("Initializing Playwright and launching browser...")
         try:
             self.playwright = sync_playwright().start()
             self.browser = self.playwright.chromium.launch(headless=self.config['scraping']['headless'])
             self.context = self.browser.new_context(user_agent=self.config['scraping']['user_agent'])
             self.page = self.context.new_page()
-            self.logger.info("Browser launched and page created.")
+            log.info("Browser launched and page created.")
             return self
         except Exception as e:
-            self.logger.error(f"Failed to initialize Playwright or launch browser: {e}")
+            log.error(f"Failed to initialize Playwright or launch browser: {e}")
             raise
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """
         Closes the browser and stops Playwright.
         """
-        self.logger.info("Closing browser and stopping Playwright...")
+        log.info("Closing browser and stopping Playwright...")
         if self.browser:
             self.browser.close()
         if self.playwright:
             self.playwright.stop()
-        self.logger.info("Playwright stopped.")
+        log.info("Playwright stopped.")
 
     def get_available_years(self, html_content: str = None) -> list[str]:
         """
@@ -54,18 +56,18 @@ class WebsiteDownloader:
         Returns:
             A list of strings, where each string represents an available year (e.g., "2023-24").
         """
-        self.logger.info("Attempting to get available years...")
+        log.info("Attempting to get available years...")
         try:
             if html_content:
-                self.logger.debug("Setting page content from provided HTML.")
+                log.debug("Setting page content from provided HTML.")
                 self.page.set_content(html_content)
             else:
                 base_url = self.config['data_source']['base_url']
-                self.logger.debug(f"Navigating to {base_url} to get live content.")
+                log.debug(f"Navigating to {base_url} to get live content.")
                 self.page.goto(base_url, timeout=self.config['scraping']['timeout_seconds'] * 1000)
 
             year_selector = self.config['scraping']['selectors']['year_dropdown']
-            self.logger.debug(f"Using year dropdown selector: {year_selector}")
+            log.debug(f"Using year dropdown selector: {year_selector}")
 
             years = []
             # Wait for the selector to be present in the DOM
@@ -79,11 +81,11 @@ class WebsiteDownloader:
                 if value and value != "":  # Exclude the placeholder option
                     years.append(value)
             
-            self.logger.info(f"Successfully extracted {len(years)} available years.")
+            log.info(f"Successfully extracted {len(years)} available years.")
             return years
 
         except Exception as e:
-            self.logger.error(f"Failed to get available years: {e}")
+            log.error(f"Failed to get available years: {e}")
             raise
 
     def wait_for_dropdown_populated(self, selector: str, timeout: int = 5000):
@@ -126,7 +128,7 @@ class WebsiteDownloader:
         round_selector = selectors['round_dropdown']
 
         for attempt in range(max_retries):
-            self.logger.info(f"Attempt {attempt + 1}/{max_retries} for {year}, grade '{grade_value}', round '{round_name}'")
+            log.info(f"Attempt {attempt + 1}/{max_retries} for {year}, grade '{grade_value}', round '{round_name}'")
             try:
                 if self.page:
                     self.page.close()
@@ -139,7 +141,7 @@ class WebsiteDownloader:
 
                 available_grades = self.get_available_options(grade_selector)
                 if grade_value not in available_grades:
-                    self.logger.warning(f"Grade '{grade_value}' not available for year {year}. Available: {available_grades}")
+                    log.warning(f"Grade '{grade_value}' not available for year {year}. Available: {available_grades}")
                     return None
 
                 self.page.select_option(grade_selector, grade_value)
@@ -147,7 +149,7 @@ class WebsiteDownloader:
 
                 available_rounds = self.get_available_options(round_selector)
                 if round_name not in available_rounds:
-                    self.logger.warning(f"Round '{round_name}' not available for year {year}, grade '{grade_value}'. Available: {available_rounds}")
+                    log.warning(f"Round '{round_name}' not available for year {year}, grade '{grade_value}'. Available: {available_rounds}")
                     return None
 
                 self.page.select_option(round_selector, round_name)
@@ -156,15 +158,15 @@ class WebsiteDownloader:
                 time.sleep(delay)
 
                 html_content = self.page.content()
-                self.logger.info(f"Successfully retrieved HTML for {year}, grade '{grade_value}', round '{round_name}'")
+                log.info(f"Successfully retrieved HTML for {year}, grade '{grade_value}', round '{round_name}'")
                 return html_content
 
             except Exception as e:
-                self.logger.warning(
+                log.warning(
                     f"An error occurred on attempt {attempt + 1} for {year}, grade '{grade_value}', round '{round_name}': {e}"
                 )
                 if attempt + 1 == max_retries:
-                    self.logger.error(
+                    log.error(
                         f"Failed to get HTML for {year}, grade '{grade_value}', round '{round_name}' after {max_retries} attempts."
                     )
                     return None

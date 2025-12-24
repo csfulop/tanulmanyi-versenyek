@@ -6,7 +6,6 @@ from tanulmanyi_versenyek.common.logger import setup_logging
 import logging
 
 setup_logging()
-test_logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
@@ -14,7 +13,7 @@ def parser():
     """Fixture to provide a parser instance for testing."""
     config = get_config()
     dummy_path = Path("dummy.html")
-    return HtmlTableParser(dummy_path, config, test_logger)
+    return HtmlTableParser(dummy_path, config)
 
 
 @pytest.fixture
@@ -114,8 +113,7 @@ def test_split_school_and_city_no_newline(parser):
 # Integration test with committed fixture
 def test_parse_with_committed_fixture(config):
     """Test parsing with small committed test fixture."""
-    test_logger_int = logging.getLogger(__name__)
-    
+
     # Use committed test fixture
     html_file = Path("tests/test_data/sample_result.html")
     assert html_file.exists(), f"Test fixture missing: {html_file}"
@@ -126,7 +124,7 @@ def test_parse_with_committed_fixture(config):
     shutil.copy(html_file, temp_file)
     
     try:
-        parser = HtmlTableParser(temp_file, config, test_logger_int)
+        parser = HtmlTableParser(temp_file, config)
         df = parser.parse()
         
         # Verify structure
