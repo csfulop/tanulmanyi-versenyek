@@ -22,8 +22,8 @@ def hungarian_sort_key(text):
     return text.translate(HUNGARIAN_SORT_MAP)
 
 
-def filter_data(df, grade_filter, year_filter):
-    """Filter dataframe by grade and year."""
+def filter_data(df, grade_filter, year_filter, city_filter="all"):
+    """Filter dataframe by grade, year, and city."""
     filtered = df.copy()
     
     # Handle grade filter
@@ -42,6 +42,15 @@ def filter_data(df, grade_filter, year_filter):
         if invalid_years:
             raise ValueError(f"Invalid year(s): {invalid_years}\nValid years are: {sorted(valid_years)}")
         filtered = filtered[filtered['ev'].isin(years)]
+    
+    # Handle city filter
+    if city_filter != "all":
+        if isinstance(city_filter, str):
+            filtered = filtered[filtered['varos'] == city_filter]
+        elif isinstance(city_filter, list):
+            filtered = filtered[filtered['varos'].isin(city_filter)]
+        else:
+            print("⚠️ Invalid CITY_FILTER format. Using all cities.")
     
     return filtered
 
@@ -202,6 +211,41 @@ def test_filter_data_invalid_year(sample_df):
     """Test that invalid year raises ValueError."""
     with pytest.raises(ValueError, match="Invalid year"):
         filter_data(sample_df, "all", "2030-31")
+
+
+def test_filter_data_single_city(sample_df):
+    """Test filtering by single city."""
+    result = filter_data(sample_df, "all", "all", "Budapest III.")
+    assert len(result) == 3
+    assert all(result['varos'] == "Budapest III.")
+
+
+def test_filter_data_multiple_cities(sample_df):
+    """Test filtering by multiple cities."""
+    result = filter_data(sample_df, "all", "all", ["Budapest III.", "Veszprém"])
+    assert len(result) == 5
+    assert set(result['varos'].unique()) == {"Budapest III.", "Veszprém"}
+
+
+def test_filter_data_city_default_all(sample_df):
+    """Test that city filter defaults to 'all'."""
+    result = filter_data(sample_df, "all", "all")
+    assert len(result) == len(sample_df)
+
+
+def test_filter_data_combined_with_city(sample_df):
+    """Test filtering by grade, year, and city together."""
+    result = filter_data(sample_df, 8, "2023-24", "Budapest XIV.")
+    assert len(result) == 1
+    assert result.iloc[0]['evfolyam'] == 8
+    assert result.iloc[0]['ev'] == "2023-24"
+    assert result.iloc[0]['varos'] == "Budapest XIV."
+
+
+def test_filter_data_city_no_match(sample_df):
+    """Test filtering by city with no matches."""
+    result = filter_data(sample_df, "all", "all", "NonExistentCity")
+    assert len(result) == 0
 
 
 # === TESTS FOR calculate_count_ranking() ===
