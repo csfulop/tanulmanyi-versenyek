@@ -179,36 +179,54 @@ For questions, corrections, or suggestions:
 
 An analysis Jupyter notebook with interactive exploration examples is available alongside this dataset. The notebook includes school and city rankings, as well as school search functionality.
 
+## Data Cleaning Process
+
+### City Name Normalization
+
+The dataset includes manual city name cleaning to address variations in the source data:
+
+- **Case normalization**: "MISKOLC" → "Miskolc"
+- **Suburb mapping**: "Debrecen-Józsa" → "Debrecen"
+- **Budapest districts**: Missing districts added where identifiable (e.g., "Budapest" → "Budapest II." for specific schools)
+
+The cleaning process uses a manually maintained mapping file that preserves data authenticity while improving consistency. Valid variations (e.g., schools with the same name in different cities) are documented but not modified.
+
+For details on the cleaning methodology, see the project repository.
+
 ## Known Data Quality Limitations
 
 ### School and City Name Inconsistencies
 
-This dataset contains school and city names **exactly as they appear on the official competition website**. This results in the following inconsistencies:
+This dataset contains school and city names with the following characteristics:
 
-**1. City Name Variations:**
-- The same school may appear with different city name variations across years
-- Examples: "Budapest" vs "Budapest VII.", "Debrecen" vs "Debrecen-Józsa", "MISKOLC" vs "Miskolc"
-- **Affected schools**: 15
+**1. City Name Variations (Fully Addressed):**
+- All city name variations have been normalized through manual mapping
+- Examples of corrections: "MISKOLC" → "Miskolc", "Debrecen-Józsa" → "Debrecen", "Budapest" → "Budapest II."
+- Valid variations (different schools with same name in different cities) are preserved
+- **Affected schools**: 15 (9 corrected, 6 valid variations documented)
 
-**2. School Name Changes:**
+**2. School Name Changes (Not Yet Addressed):**
 - Schools' official names may change over time (reorganization, renaming)
 - Minor variations in spelling or abbreviations
 - Example: "Baár-Madas Református Gimnázium és Általános Iskola" vs "Baár-Madas Református Gimnázium, Általános Iskola és Kollégium"
 - **Affected school groups**: 70+
+- **Status**: Planned for future release
 
 **Impact on Rankings:**
-- The same school may appear multiple times in rankings with different name variations
+- City name variations have been fully addressed through cleaning
+- School name variations still cause the same school to appear multiple times in rankings
 - Rankings thus provide a **lower bound estimate** of schools' performance
-- Actual rankings may be higher if all name variations were consolidated
+- Actual rankings may be higher if all school name variations were consolidated
 
-**Why We Didn't Fix This:**
-- Data faithfully reflects the source (authenticity)
-- Determining the "correct" name would be subjective
-- Future versions may include normalization
+**Why School Names Aren't Fixed Yet:**
+- More complex than city names (70+ variations vs 15)
+- Requires careful research of official school names
+- Planned for future release after city cleaning is stable
 
 **Recommendations for Users:**
-- Use partial name search to find schools
-- Be aware that rankings are conservative estimates
+- City names are now fully consistent and reliable
+- Use partial name search to find schools (school names still have variations)
+- Be aware that school rankings are conservative estimates
 - Check all name variations of a school for complete results
 
 ## License

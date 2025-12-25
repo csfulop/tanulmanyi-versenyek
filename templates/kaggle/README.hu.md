@@ -179,36 +179,54 @@ Kérdések, javítások vagy javaslatok esetén:
 
 Az adathalmaz mellett elérhető egy Jupyter notebook is, amely interaktív elemzési példákat tartalmaz. A notebook tartalmazza az iskolák és városok rangsorait, valamint iskola keresési funkciót.
 
+## Adatminőség-javítási folyamat
+
+### Városnevek normalizálása
+
+Az adathalmaz manuális városnév-tisztítást tartalmaz a forrásadatok eltéréseinek kezelésére:
+
+- **Kis- és nagybetűk normalizálása**: "MISKOLC" → "Miskolc"
+- **Külterületek leképezése**: "Debrecen-Józsa" → "Debrecen"
+- **Budapesti kerületek**: Hiányzó kerületek hozzáadása, ahol azonosítható (pl. "Budapest" → "Budapest II." adott iskolák esetén)
+
+A tisztítási folyamat egy manuálisan karbantartott leképezési fájlt használ, amely megőrzi az adatok hitelességét, miközben javítja a konzisztenciát. Az érvényes eltérések (pl. azonos nevű iskolák különböző városokban) dokumentálva vannak, de nem módosulnak.
+
+A tisztítási módszertan részleteiért lásd a projekt repository-ját.
+
 ## Ismert adatminőségi korlátozások
 
 ### Iskola- és városnevek következetlensége
 
-Az adathalmaz az iskolák és városok neveit **pontosan úgy tartalmazza, ahogy azok a verseny hivatalos weboldalán szerepelnek**. Ez az alábbi következetlenségeket eredményezi:
+Az adathalmaz az iskolák és városok neveit az alábbi jellemzőkkel tartalmazza:
 
-**1. Városnevek variációi:**
-- Ugyanaz az iskola különböző években különböző városnév-változatokkal szerepelhet
-- Példák: "Budapest" vs "Budapest VII.", "Debrecen" vs "Debrecen-Józsa", "MISKOLC" vs "Miskolc"
-- **Érintett iskolák száma**: 15
+**1. Városnevek variációi (Teljesen kezelve):**
+- Minden városnév-variáció manuális leképezéssel normalizálásra került
+- Javítási példák: "MISKOLC" → "Miskolc", "Debrecen-Józsa" → "Debrecen", "Budapest" → "Budapest II."
+- Az érvényes variációk (különböző iskolák azonos névvel különböző városokban) megmaradnak
+- **Érintett iskolák száma**: 15 (9 javítva, 6 érvényes variáció dokumentálva)
 
-**2. Iskolanevek változásai:**
+**2. Iskolanevek változásai (Még nem kezelve):**
 - Az iskolák hivatalos neve idővel változhat (átszervezés, névváltoztatás)
 - Kisebb eltérések az írásmódban vagy rövidítésekben
 - Példa: "Baár-Madas Református Gimnázium és Általános Iskola" vs "Baár-Madas Református Gimnázium, Általános Iskola és Kollégium"
 - **Érintett iskolacsoportok száma**: 70+
+- **Státusz**: Jövőbeli kiadásban tervezett
 
 **Hatás a rangsorokra:**
-- Ugyanaz az iskola több névváltozattal is megjelenhet a rangsorokban
+- A városnév-variációk teljesen kezelve lettek a tisztítás révén
+- Az iskolanév-variációk miatt ugyanaz az iskola még mindig több névváltozattal is megjelenhet a rangsorokban
 - A rangsorok így **alsó becslést** adnak az iskolák teljesítményére
-- A valós helyezések magasabbak lehetnek, ha az összes névváltozatot összesítenénk
+- A valós helyezések magasabbak lehetnek, ha az összes iskolanév-változatot összesítenénk
 
-**Miért nem javítottuk ki:**
-- Az adatok hűen tükrözik a forrást (hitelesség)
-- A "helyes" név meghatározása szubjektív lenne
-- A jövőbeli verziók tartalmazhatnak normalizálást
+**Miért nincsenek még javítva az iskolanevek:**
+- Összetettebb, mint a városnevek (70+ variáció vs 15)
+- Az iskolák hivatalos neveinek gondos kutatását igényli
+- Jövőbeli kiadásban tervezett, miután a városnév-tisztítás stabil
 
 **Javaslat felhasználóknak:**
-- Használj részleges névkeresést az iskolák megtalálásához
-- Vedd figyelembe, hogy a rangsorok konzervatív becslések
+- A városnevek mostantól teljesen konzisztensek és megbízhatóak
+- Használj részleges névkeresést az iskolák megtalálásához (az iskolanevek még mindig tartalmaznak variációkat)
+- Vedd figyelembe, hogy az iskolai rangsorok konzervatív becslések
 - Ellenőrizd az iskola összes névváltozatát a pontos eredményekhez
 
 ## Licenc
