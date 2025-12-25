@@ -278,7 +278,6 @@ class TestCheckCityVariations:
     def test_check_all_valid(self, sample_dataframe, sample_mapping):
         stats = check_city_variations(sample_dataframe, sample_mapping)
 
-        assert stats['total_schools_with_variations'] == 1
         assert stats['valid_combinations'] == 2
         assert stats['unmapped_combinations'] == 0
 
@@ -294,7 +293,6 @@ class TestCheckCityVariations:
 
         stats = check_city_variations(df, mapping)
 
-        assert stats['total_schools_with_variations'] == 1
         assert stats['valid_combinations'] == 2
         assert stats['unmapped_combinations'] == 1
 
@@ -306,7 +304,6 @@ class TestCheckCityVariations:
 
         stats = check_city_variations(df, {})
 
-        assert stats['total_schools_with_variations'] == 0
         assert stats['valid_combinations'] == 0
         assert stats['unmapped_combinations'] == 0
 
@@ -318,7 +315,6 @@ class TestCheckCityVariations:
 
         stats = check_city_variations(df, {})
 
-        assert stats['total_schools_with_variations'] == 1
         assert stats['valid_combinations'] == 0
         assert stats['unmapped_combinations'] == 2
 
@@ -339,6 +335,27 @@ class TestCheckCityVariations:
 
         stats = check_city_variations(df_after_correction, mapping)
 
-        assert stats['total_schools_with_variations'] == 0
         assert stats['valid_combinations'] == 0
         assert stats['unmapped_combinations'] == 0
+
+    def test_check_budapest_without_district(self):
+        """Test that Budapest without district is counted in unmapped."""
+        df = pd.DataFrame({
+            'iskola_nev': ['School A', 'School B', 'School C'],
+            'varos': ['Budapest', 'Budapest II.', 'Debrecen']
+        })
+
+        stats = check_city_variations(df, {})
+
+        assert stats['unmapped_combinations'] == 1
+
+    def test_check_multiple_budapest_without_district(self):
+        """Test multiple Budapest entries without district."""
+        df = pd.DataFrame({
+            'iskola_nev': ['School A', 'School A', 'School B'],
+            'varos': ['Budapest', 'Budapest', 'Budapest']
+        })
+
+        stats = check_city_variations(df, {})
+
+        assert stats['unmapped_combinations'] == 3

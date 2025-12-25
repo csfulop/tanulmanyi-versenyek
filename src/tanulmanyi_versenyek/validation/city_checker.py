@@ -86,22 +86,21 @@ def apply_city_mapping(df: pd.DataFrame, mapping: Dict[Tuple[str, str], dict]) -
     Returns:
         Tuple of (corrected DataFrame, number of corrections applied)
     """
-    if not mapping:
-        return df, 0
-
     corrected_df = df.copy()
     corrections_count = 0
 
-    for idx, row in corrected_df.iterrows():
-        key = (row['iskola_nev'], row['varos'])
-        if key in mapping:
-            entry = mapping[key]
-            if not entry['is_valid'] and entry['corrected_city']:
-                log.debug(f"Applied mapping: school=\"{row['iskola_nev']}\", \"{row['varos']}\" → \"{entry['corrected_city']}\"")
-                corrected_df.at[idx, 'varos'] = entry['corrected_city']
-                corrections_count += 1
+    if mapping:
+        for idx, row in corrected_df.iterrows():
+            key = (row['iskola_nev'], row['varos'])
+            if key in mapping:
+                entry = mapping[key]
+                if not entry['is_valid'] and entry['corrected_city']:
+                    log.debug(f"Applied mapping: school=\"{row['iskola_nev']}\", \"{row['varos']}\" → \"{entry['corrected_city']}\"")
+                    corrected_df.at[idx, 'varos'] = entry['corrected_city']
+                    corrections_count += 1
 
-    log.info(f"Applied {corrections_count} city corrections")
+        log.info(f"Applied {corrections_count} city corrections")
+    
     return corrected_df, corrections_count
 
 
@@ -159,7 +158,6 @@ def check_city_variations(df: pd.DataFrame, mapping: Dict[Tuple[str, str], dict]
     Returns:
         Statistics dictionary with:
         {
-            "total_schools_with_variations": int,
             "valid_combinations": int,
             "unmapped_combinations": int
         }
@@ -181,11 +179,17 @@ def check_city_variations(df: pd.DataFrame, mapping: Dict[Tuple[str, str], dict]
                 log.warning(f"Unmapped combination: school=\"{school}\", city=\"{city}\"")
                 unmapped_count += 1
 
+    # Check for "Budapest" without district
+    budapest_no_district = df[df['varos'] == 'Budapest']
+    if not budapest_no_district.empty:
+        for _, row in budapest_no_district.iterrows():
+            log.warning(f"Budapest without district: school=\"{row['iskola_nev']}\", city=\"Budapest\" (should include district)")
+            unmapped_count += 1
+
     log.info(f"City variation check: {len(variations)} schools with variations, "
              f"{valid_count} valid, {unmapped_count} unmapped")
 
     return {
-        'total_schools_with_variations': len(variations),
         'valid_combinations': valid_count,
         'unmapped_combinations': unmapped_count
     }

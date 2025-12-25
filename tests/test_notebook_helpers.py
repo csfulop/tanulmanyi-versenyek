@@ -235,11 +235,13 @@ def test_filter_data_city_default_all(sample_df):
 
 def test_filter_data_combined_with_city(sample_df):
     """Test filtering by grade, year, and city together."""
-    result = filter_data(sample_df, 8, "2023-24", "Budapest XIV.")
+    # Budapest III. has 3 entries: grade 3 (2023-24), grade 7 (2023-24), grade 4 (2024-25)
+    # Filtering by grade 7 + year 2023-24 + city Budapest III. should give exactly 1 result
+    result = filter_data(sample_df, 7, "2023-24", "Budapest III.")
     assert len(result) == 1
-    assert result.iloc[0]['evfolyam'] == 8
+    assert result.iloc[0]['evfolyam'] == 7
     assert result.iloc[0]['ev'] == "2023-24"
-    assert result.iloc[0]['varos'] == "Budapest XIV."
+    assert result.iloc[0]['varos'] == "Budapest III."
 
 
 def test_filter_data_city_no_match(sample_df):
