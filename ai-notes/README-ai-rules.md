@@ -89,3 +89,40 @@
 - ✅ ALWAYS: Aggregate data with pandas before writing to Excel
 - ❌ NEVER: Rely on openpyxl to create pivot tables programmatically (limited support)
 - ❌ NEVER: Use LibreOffice to create Excel pivot tables in .xlsx format (compatibility issues)
+
+## Jupyter Notebooks
+- ✅ ALWAYS: Use path detection for cross-environment compatibility: `if os.path.exists('/kaggle/input'): ...`
+- ✅ ALWAYS: Keep helper functions inline (not imported) for portability and self-documentation
+- ✅ ALWAYS: Provide dual language support (HU/EN) for all explanations and results
+- ✅ ALWAYS: Use configurable parameter blocks at top of analysis cells
+- ✅ ALWAYS: Set `pd.options.display.max_rows` to prevent pandas truncation of results
+- ✅ ALWAYS: Restore original pandas display settings after displaying results
+- ❌ NEVER: Rely on locale-dependent features (e.g., `locale.setlocale()`) - won't work on Kaggle
+
+## Ranking & Aggregation
+- ✅ ALWAYS: Group by entity name only (e.g., `iskola_nev`), not by name+city (causes duplicate counting)
+- ✅ ALWAYS: Add city/location for display using `.mode()[0]` to select most common value
+- ✅ ALWAYS: Add secondary sort by name for deterministic tie-breaking
+- ✅ ALWAYS: Use `hungarian_sort_key()` for alphabetical sorting of Hungarian text
+- ⚠️ INFO: Hungarian sorting: normalize accented chars (á→a, é→e) using `str.maketrans()`
+
+## Data Validation & Quality
+- ✅ ALWAYS: Use composite keys `(school_name, city)` for city mapping to handle same school in different cities
+- ✅ ALWAYS: Support "VALID" flag in mapping files to preserve intentional variations
+- ✅ ALWAYS: Apply corrections before saving master CSV (not after)
+- ✅ ALWAYS: Check for "Budapest" without district number - log as unmapped variation
+- ✅ ALWAYS: Return only values used by caller - avoid passing through unused data
+- ❌ NEVER: Group by both name and city in rankings - causes same entity to be counted separately
+
+## Logging
+- ✅ ALWAYS: Use module-level logger: `log = logging.getLogger(__name__.split('.')[-1])`
+- ❌ NEVER: Pass logger as function parameter - use module-level logger instead
+- ❌ NEVER: Use `logging.info()` directly - use module logger `log.info()`
+- ⚠️ INFO: Module-level loggers show short module name in logs (e.g., "data_merger" not "root")
+
+## Function Design
+- ✅ ALWAYS: Single responsibility - functions should do one thing well
+- ✅ ALWAYS: Return tuple when function produces multiple related values (e.g., `(df, count)`)
+- ✅ ALWAYS: Create DataFrame copy when modifying to preserve immutability
+- ❌ NEVER: Pass through data that calling code already has - violates single responsibility
+- ❌ NEVER: Save files inside data processing functions - let caller decide when to save

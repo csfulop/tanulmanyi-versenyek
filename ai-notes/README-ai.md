@@ -6,7 +6,7 @@ For the actual documents see dev-history/<LATEST> folder.
 The actual requirements document is in step1-requirements.md.
 The actual design document is in step2-design.md.
 The step-by-step breakdown plan is in step3-breakdown-plan.md.
-See README-ai-rules.md for project specific rules and follow them during the coding session.
+See ai-notes/README-ai-rules.md for project specific rules and follow them during the coding session.
 
 Follow the steps described in the step-by-step breakdown and design documents.
 Only implement one step at a time.
