@@ -14,7 +14,7 @@ from tanulmanyi_versenyek.validation.city_checker import (
     check_city_variations
 )
 
-log = logging.getLogger('03_merger_and_excel')
+log = logging.getLogger('04_merger_and_excel')
 
 
 def main():
@@ -23,7 +23,7 @@ def main():
     Sets up logging and loads configuration.
     """
     logger.setup_logging()
-    log.info("Script starting: 03_merger_and_excel.py")
+    log.info("Script starting: 04_merger_and_excel.py")
     try:
         cfg = config.get_config()
         log.info("Configuration loaded successfully.")
