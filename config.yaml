@@ -30,8 +30,10 @@ paths:
   processed_csv_dir: "data/processed_csv"
   report_dir: "data/analysis_templates"
   kaggle_dir: "data/kaggle"
+  helper_data_dir: "data/helper_data"
   master_csv: "data/kaggle/master_bolyai_anyanyelv.csv"
   validation_report: "data/validation_report.json"
+  audit_file: "data/school_matching_audit.csv"
   log_file: "data/pipeline.log"
   template_file: "templates/report_template.xlsx"
   kaggle_template_dir: "templates/kaggle"
@@ -44,3 +46,19 @@ logging:
 
 validation:
   city_mapping_file: "config/city_mapping.csv"
+  school_mapping_file: "config/school_mapping.csv"
+
+kir:
+  index_url: "https://kir.oktatas.hu/kirpub/index"
+  locations_file: "data/helper_data/kir_feladatellatasi_helyek.xlsx"
+  locations_filename_pattern: "kir_mukodo_feladatellatasi_helyek_{date}.xlsx"
+  required_columns:
+    - "Intézmény megnevezése"
+    - "A feladatellátási hely települése"
+    - "A feladatellátási hely vármegyéje"
+    - "A feladatellátási hely régiója"
+
+matching:
+  high_confidence_threshold: 90
+  medium_confidence_threshold: 80
+  algorithm: "token_set_ratio"
