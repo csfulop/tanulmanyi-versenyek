@@ -47,7 +47,12 @@ Working Practices: Document what aspects of the project's current structure or c
 Non-Working Practices: Identify any parts of the project that are problematic, inefficient, or should be refactored in the future.
 Recommendations: Provide a concise list of actionable best practices or coding standards specifically tailored for this project.
 5. Suggestion for commit message
-Suggest a commit message for the current step. 
+See "Commit Message Guidelines" section below for format and content rules.
+
+The report should be concise, clear, and actionable. Focus on technical details and practical insights. Avoid verbose descriptions. Use bullet points and code snippets where appropriate to illustrate points. The final document should be a structured, markdown output ready for use as a reference.
+
+### Commit Message Guidelines
+
 A good commit message:
 - Explains the problem that was solved and why
 - Describes the solution approach at a high level
@@ -55,8 +60,6 @@ A good commit message:
 - Does NOT include information visible in git (test counts, file lists, line counts)
 - Does NOT mention gitignored files or development artifacts
 Follow conventional commits format: type(scope): subject
-
-The report should be concise, clear, and actionable. Focus on technical details and practical insights. Avoid verbose descriptions. Use bullet points and code snippets where appropriate to illustrate points. The final document should be a structured, markdown output ready for use as a reference.
 
 ## Rules for implementation
 
