@@ -1,24 +1,3 @@
-school_name;original_city;corrected_city;comment
-Gárdonyi Géza Általános Iskola;Budapest XIII.;;VALID - different schools with same name in different districts
-Gárdonyi Géza Általános Iskola;Budapest XI.;;VALID - different schools with same name in different districts
-Gárdonyi Géza Általános Iskola;Győr;;VALID - different schools with same name in different cities
-Budapest-Fasori Református Kollégium Julianna Általános Iskola;Budapest;Budapest VII.;Add missing district based on school location
-Baár-Madas Református Gimnázium és Általános Iskola;Budapest;Budapest II.;Add missing district based on school location
-Debreceni Gönczy Pál Általános Iskola;Debrecen-Józsa;Debrecen;Map suburb to parent city
-Deák Téri Evangélikus Gimnázium;Budapest;Budapest V.;Add missing district based on school location
-Diósgyőri Szent Ferenc Római Katolikus Általános Iskola és Óvoda;MISKOLC;Miskolc;Normalize case to proper case
-Jókai Mór Általános Iskola;Budapest XIV.;;VALID - different schools with same name in different districts
-Jókai Mór Általános Iskola;Budapest XVI.;;VALID - different schools with same name in different districts
-Kazinczy Ferenc Református Általános Iskola és Óvoda;Felsőzsolca;;VALID - different schools with same name in different cities
-Kazinczy Ferenc Református Általános Iskola és Óvoda;Tiszaújváros;;VALID - different schools with same name in different cities
-Kálvin Téri Református Általános Iskola;Makó;;VALID - different schools with same name in different cities
-Kálvin Téri Református Általános Iskola;Veresegyház;;VALID - different schools with same name in different cities
-Pannonhalmi Főapátság Máriaremete-Hidegkúti Ökumenikus Általános Iskolája;Budapest;Budapest II.;Add missing district based on school location
-Remetekertvárosi Általános Iskola;Budapest;Budapest II.;Add missing district based on school location
-Rózsadombi Általános Iskola;Budapest;Budapest II.;Add missing district based on school location
-Szent Erzsébet Katolikus Általános Iskola és Óvoda;Isaszeg;;VALID - same school with multiple locations
-Szent Erzsébet Katolikus Általános Iskola és Óvoda;Pécel;;VALID - same school with multiple locations
-Szent Imre Római Katolikus Általános Iskola és Óvoda;Miskolc;;VALID - different schools with same name in different cities
-Szent Imre Római Katolikus Általános Iskola és Óvoda;Komárom;;VALID - different schools with same name in different cities
-Újlaki Magyar-Olasz Két Tanítási Nyelvű Általános Iskola;Budapest;Budapest II.;Add missing district based on school location
-Szabó Magda Magyar-Angol Két Tanítási Nyelvű Általános Iskola;Budapest;Budapest II.;Add missing district based on school location
+original_city;corrected_city;comment
+Debrecen-Józsa;Debrecen;Map suburb to parent city
+MISKOLC;Miskolc;Normalize case to proper case

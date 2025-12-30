@@ -80,7 +80,7 @@ def merge_processed_data(cfg):
 
     return master_df, duplicates_removed
 
-def generate_validation_report(df, cfg, duplicates_removed=0, city_stats=None):
+def generate_validation_report(df, cfg, duplicates_removed=0, city_corrections=0):
     """
     Generate a validation report with data quality metrics.
 
@@ -88,7 +88,7 @@ def generate_validation_report(df, cfg, duplicates_removed=0, city_stats=None):
         df: Master DataFrame
         cfg: Configuration dictionary
         duplicates_removed: Number of duplicate rows removed during merge
-        city_stats: Optional dictionary with city mapping statistics
+        city_corrections: Number of city corrections applied
     """
     report_path = Path(cfg['paths']['validation_report'])
 
@@ -103,15 +103,9 @@ def generate_validation_report(df, cfg, duplicates_removed=0, city_stats=None):
         'duplicates_removed': duplicates_removed,
         'null_counts': null_counts,
         'null_percentages': null_percentages,
-        'unique_schools': unique_schools
+        'unique_schools': unique_schools,
+        'city_corrections_applied': city_corrections
     }
-
-    if city_stats:
-        report['city_mapping'] = {
-            'corrections_applied': city_stats.get('corrections_applied', 0),
-            'valid_variations': city_stats.get('valid_combinations', 0),
-            'unmapped_variations': city_stats.get('unmapped_combinations', 0)
-        }
 
     with open(report_path, 'w', encoding='utf-8') as f:
         json.dump(report, f, indent=2, ensure_ascii=False)

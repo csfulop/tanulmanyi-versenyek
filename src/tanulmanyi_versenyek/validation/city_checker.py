@@ -2,31 +2,21 @@
 
 import logging
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict
 
 import pandas as pd
 
 log = logging.getLogger(__name__.split('.')[-1])
 
 
-def _is_valid_entry(comment: str) -> bool:
-    """Check if mapping entry is marked as VALID (no correction needed)."""
-    return "VALID" in comment.upper()
-
-
-def _parse_mapping_csv(filepath: Path) -> Dict[Tuple[str, str], dict]:
+def _parse_mapping_csv(filepath: Path) -> Dict[str, str]:
     """Parse city mapping CSV file into dictionary.
 
     Args:
         filepath: Path to city_mapping.csv
 
     Returns:
-        Dictionary keyed by (school_name, original_city) with values:
-        {
-            "corrected_city": str or "",
-            "comment": str,
-            "is_valid": bool
-        }
+        Dictionary: {original_city: corrected_city}
     """
     try:
         df = pd.read_csv(filepath, sep=';', encoding='utf-8')
@@ -34,24 +24,22 @@ def _parse_mapping_csv(filepath: Path) -> Dict[Tuple[str, str], dict]:
         log.error(f"Failed to read mapping CSV: {e}")
         return {}
 
-    required_columns = ['school_name', 'original_city', 'corrected_city', 'comment']
+    required_columns = ['original_city', 'corrected_city']
     if not all(col in df.columns for col in required_columns):
         log.error(f"Missing required columns. Expected: {required_columns}, Found: {list(df.columns)}")
         return {}
 
     mapping = {}
     for _, row in df.iterrows():
-        key = (row['school_name'], row['original_city'])
-        mapping[key] = {
-            'corrected_city': row['corrected_city'] if pd.notna(row['corrected_city']) else '',
-            'comment': row['comment'] if pd.notna(row['comment']) else '',
-            'is_valid': _is_valid_entry(row['comment'] if pd.notna(row['comment']) else '')
-        }
+        if pd.notna(row['corrected_city']) and row['corrected_city']:
+            mapping[row['original_city']] = row['corrected_city']
+        else:
+            log.warning(f"Skipping row with empty corrected_city: original_city=\"{row['original_city']}\"")
 
     return mapping
 
 
-def load_city_mapping(config: dict) -> Dict[Tuple[str, str], dict]:
+def load_city_mapping(config: dict) -> Dict[str, str]:
     """Load city mapping configuration from CSV file.
 
     Args:
@@ -76,11 +64,11 @@ def load_city_mapping(config: dict) -> Dict[Tuple[str, str], dict]:
     return mapping
 
 
-def apply_city_mapping(df: pd.DataFrame, mapping: Dict[Tuple[str, str], dict]) -> Tuple[pd.DataFrame, int]:
+def apply_city_mapping(df: pd.DataFrame, mapping: Dict[str, str]) -> tuple[pd.DataFrame, int]:
     """Apply city name corrections to DataFrame.
 
     Args:
-        df: DataFrame with 'iskola_nev' and 'varos' columns
+        df: DataFrame with 'varos' column
         mapping: City mapping dictionary from load_city_mapping()
 
     Returns:
@@ -91,133 +79,13 @@ def apply_city_mapping(df: pd.DataFrame, mapping: Dict[Tuple[str, str], dict]) -
 
     if mapping:
         for idx, row in corrected_df.iterrows():
-            key = (row['iskola_nev'], row['varos'])
-            if key in mapping:
-                entry = mapping[key]
-                if not entry['is_valid'] and entry['corrected_city']:
-                    log.debug(f"Applied mapping: school=\"{row['iskola_nev']}\", \"{row['varos']}\" → \"{entry['corrected_city']}\"")
-                    corrected_df.at[idx, 'varos'] = entry['corrected_city']
-                    corrections_count += 1
+            if row['varos'] in mapping:
+                original = row['varos']
+                corrected = mapping[original]
+                log.debug(f"Applied: \"{original}\" → \"{corrected}\"")
+                corrected_df.at[idx, 'varos'] = corrected
+                corrections_count += 1
 
         log.info(f"Applied {corrections_count} city corrections")
-    
+
     return corrected_df, corrections_count
-
-
-def _detect_variations(df: pd.DataFrame) -> Dict[str, dict]:
-    """Detect schools with multiple city variations.
-
-    Args:
-        df: DataFrame with 'iskola_nev' and 'varos' columns
-
-    Returns:
-        Dictionary of schools with variations:
-        {
-            "School Name": {
-                "cities": ["City1", "City2"],
-                "count": 2
-            }
-        }
-    """
-    school_cities = df.groupby('iskola_nev')['varos'].apply(lambda x: sorted(x.unique())).to_dict()
-    variations = {school: {'cities': cities, 'count': len(cities)}
-                  for school, cities in school_cities.items()
-                  if len(cities) > 1}
-    return variations
-
-
-def _build_allowed_combinations(mapping: Dict[Tuple[str, str], dict]) -> set:
-    """Build set of allowed (school, city) combinations from mapping.
-
-    Includes:
-    - (school_name, original_city) marked as VALID
-    - (school_name, corrected_city) from corrections
-
-    Args:
-        mapping: City mapping dictionary
-
-    Returns:
-        Set of allowed (school_name, city) tuples
-    """
-    allowed = set()
-    for (school, original_city), entry in mapping.items():
-        if entry['is_valid']:
-            allowed.add((school, original_city))
-        elif entry['corrected_city']:
-            allowed.add((school, entry['corrected_city']))
-    return allowed
-
-
-def check_city_variations(df: pd.DataFrame, mapping: Dict[Tuple[str, str], dict]) -> dict:
-    """Check for unmapped city variations and log warnings.
-
-    Args:
-        df: DataFrame with 'iskola_nev' and 'varos' columns (after corrections applied)
-        mapping: City mapping dictionary from load_city_mapping()
-
-    Returns:
-        Statistics dictionary with:
-        {
-            "valid_combinations": int,
-            "unmapped_combinations": int
-        }
-    """
-    variations = _detect_variations(df)
-    allowed_combinations = _build_allowed_combinations(mapping)
-
-    valid_count = 0
-    unmapped_count = 0
-
-    for school, info in variations.items():
-        log.debug(f"School \"{school}\" has {info['count']} city variations: {info['cities']}")
-
-        for city in info['cities']:
-            key = (school, city)
-            if key in allowed_combinations:
-                valid_count += 1
-            else:
-                log.warning(f"Unmapped combination: school=\"{school}\", city=\"{city}\"")
-                unmapped_count += 1
-
-    # Check for "Budapest" without district
-    budapest_no_district = df[df['varos'] == 'Budapest']
-    if not budapest_no_district.empty:
-        for _, row in budapest_no_district.iterrows():
-            log.warning(f"Budapest without district: school=\"{row['iskola_nev']}\", city=\"Budapest\" (should include district)")
-            unmapped_count += 1
-
-    log.info(f"City variation check: {len(variations)} schools with variations, "
-             f"{valid_count} valid, {unmapped_count} unmapped")
-
-    return {
-        'valid_combinations': valid_count,
-        'unmapped_combinations': unmapped_count
-    }
-
-
-def main():
-    """Standalone execution: check city variations in master dataset."""
-    from tanulmanyi_versenyek.common.config import get_config
-    from tanulmanyi_versenyek.common.logger import setup_logging
-
-    setup_logging()
-    log.info("Starting standalone city variation check")
-
-    config = get_config()
-    master_csv_path = Path(config['paths']['master_csv'])
-
-    if not master_csv_path.exists():
-        log.error(f"Master CSV not found at {master_csv_path}")
-        return
-
-    log.info(f"Loading master CSV from {master_csv_path}")
-    df = pd.read_csv(master_csv_path, sep=';', encoding='utf-8')
-
-    mapping = load_city_mapping(config)
-    stats = check_city_variations(df, mapping)
-
-    log.info(f"Check complete: {stats}")
-
-
-if __name__ == "__main__":
-    main()

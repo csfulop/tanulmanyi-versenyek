@@ -10,8 +10,7 @@ from tanulmanyi_versenyek.merger.data_merger import (
 )
 from tanulmanyi_versenyek.validation.city_checker import (
     load_city_mapping,
-    apply_city_mapping,
-    check_city_variations
+    apply_city_mapping
 )
 
 log = logging.getLogger('04_merger_and_excel')
@@ -58,11 +57,7 @@ def main():
         master_df.to_csv(master_csv_path, sep=';', encoding='utf-8', index=False)
         log.info(f"Master CSV with corrections saved to {master_csv_path}")
 
-        variation_stats = check_city_variations(master_df, city_mapping)
-
-        city_stats = {**variation_stats, 'corrections_applied': corrections_applied}
-
-        generate_validation_report(master_df, cfg, duplicates_removed, city_stats)
+        generate_validation_report(master_df, cfg, duplicates_removed, corrections_applied)
         generate_excel_report(master_df, cfg)
 
         log.info("Script completed successfully")
