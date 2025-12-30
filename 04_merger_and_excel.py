@@ -12,8 +12,25 @@ from tanulmanyi_versenyek.validation.city_checker import (
     load_city_mapping,
     apply_city_mapping
 )
+from tanulmanyi_versenyek.validation.school_matcher import (
+    load_kir_database,
+    load_school_mapping,
+    match_all_schools,
+    apply_matches,
+    generate_audit_file
+)
 
 log = logging.getLogger('04_merger_and_excel')
+
+
+def validate_kir_file_exists(cfg):
+    """Validate KIR file exists before proceeding."""
+    kir_file = Path(cfg['kir']['locations_file'])
+    if not kir_file.exists():
+        raise FileNotFoundError(
+            f"KIR database file not found: {kir_file}\n"
+            f"Please run: poetry run python 03_download_helper_data.py"
+        )
 
 
 def main():
@@ -26,6 +43,9 @@ def main():
     try:
         cfg = config.get_config()
         log.info("Configuration loaded successfully.")
+
+        validate_kir_file_exists(cfg)
+        log.info("KIR file validation passed")
 
         kaggle_template_dir = Path(cfg['paths']['kaggle_template_dir'])
         kaggle_output_dir = Path(cfg['paths']['kaggle_dir'])
@@ -50,17 +70,40 @@ def main():
             log.error("Master DataFrame is empty, cannot proceed")
             return
 
+        log.info("Applying city corrections...")
         city_mapping = load_city_mapping(cfg)
         master_df, corrections_applied = apply_city_mapping(master_df, city_mapping)
 
+        log.info("Loading KIR database...")
+        kir_df = load_kir_database(cfg)
+
+        log.info("Loading manual school mappings...")
+        school_mapping = load_school_mapping(cfg)
+
+        log.info("Matching schools to KIR database...")
+        match_results = match_all_schools(master_df, kir_df, school_mapping, cfg)
+
+        log.info("Applying school matches...")
+        original_count = len(master_df)
+        master_df = apply_matches(master_df, match_results)
+        final_count = len(master_df)
+        log.info(f"Records: {original_count} → {final_count} (dropped {original_count - final_count})")
+
+        log.info("Generating audit file...")
+        audit_path = Path(cfg['paths']['audit_file'])
+        generate_audit_file(match_results, audit_path)
+
         master_csv_path = Path(cfg['paths']['master_csv'])
         master_df.to_csv(master_csv_path, sep=';', encoding='utf-8', index=False)
-        log.info(f"Master CSV with corrections saved to {master_csv_path}")
+        log.info(f"Master CSV saved to {master_csv_path}")
 
-        generate_validation_report(master_df, cfg, duplicates_removed, corrections_applied)
+        generate_validation_report(master_df, cfg, duplicates_removed, corrections_applied, match_results)
         generate_excel_report(master_df, cfg)
 
         log.info("Script completed successfully")
+    except FileNotFoundError as e:
+        log.error(str(e))
+        raise
     except Exception as e:
         log.error(f"An error occurred: {e}")
         raise

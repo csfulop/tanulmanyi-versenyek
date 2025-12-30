@@ -116,3 +116,109 @@ def test_end_to_end_download_and_parse(downloaded_html, config):
     assert first_row['helyezes'] == 1, "First row should have rank 1"
     assert 'Általános Iskola' in first_row['iskola_nev'] or 'Gimnázium' in first_row['iskola_nev'], \
         "School name should contain school type"
+
+
+@pytest.fixture(scope="module")
+def downloaded_kir_file(live_data_dir, config):
+    """
+    Download real KIR file for integration testing.
+    Downloads once per test session and reuses.
+    Note: Must run after downloaded_html to avoid clearing the HTML file.
+    """
+    import pandas as pd
+    from tanulmanyi_versenyek.kir_downloader.kir_scraper import get_latest_kir_url, download_kir_file
+    
+    kir_path = live_data_dir / 'kir_feladatellatasi_helyek.xlsx'
+    
+    # Download KIR file (without clearing directory)
+    index_url = config['kir']['index_url']
+    pattern = 'kir_mukodo_feladatellatasi_helyek'
+    
+    url = get_latest_kir_url(index_url, pattern)
+    download_kir_file(url, kir_path)
+    
+    assert kir_path.exists(), "KIR file should be downloaded"
+    
+    return kir_path
+
+
+@pytest.mark.integration
+def test_full_pipeline_with_kir(downloaded_html, downloaded_kir_file, config, tmp_path):
+    """Test complete pipeline from parse to final output with school matching."""
+    import pandas as pd
+    from tanulmanyi_versenyek.parser.html_parser import HtmlTableParser
+    from tanulmanyi_versenyek.validation.city_checker import load_city_mapping, apply_city_mapping
+    from tanulmanyi_versenyek.validation.school_matcher import (
+        load_kir_database,
+        load_school_mapping,
+        match_all_schools,
+        apply_matches,
+        generate_audit_file
+    )
+
+    # Parse the downloaded HTML to get test data
+    parser = HtmlTableParser(downloaded_html, config)
+    test_df = parser.parse()
+    assert len(test_df) > 0, "Test DataFrame should not be empty"
+    original_count = len(test_df)
+
+    # Get unique cities from test data
+    test_cities = test_df['varos'].unique()
+    
+    # Load full KIR database
+    temp_config = config.copy()
+    temp_config['kir'] = config['kir'].copy()
+    temp_config['kir']['locations_file'] = str(downloaded_kir_file)
+    
+    kir_df = load_kir_database(temp_config)
+    
+    # Filter KIR to only cities in test data (for performance)
+    from tanulmanyi_versenyek.validation.school_matcher import cities_match
+    filtered_kir = []
+    for _, kir_row in kir_df.iterrows():
+        kir_city = kir_row['A feladatellátási hely települése']
+        for test_city in test_cities:
+            if cities_match(test_city, kir_city):
+                filtered_kir.append(kir_row)
+                break
+    
+    kir_df_filtered = pd.DataFrame(filtered_kir)
+    assert len(kir_df_filtered) > 0, "Should have KIR schools in test cities"
+
+    # Apply city corrections
+    city_mapping = load_city_mapping(temp_config)
+    test_df, corrections_applied = apply_city_mapping(test_df, city_mapping)
+
+    # Match schools
+    school_mapping = load_school_mapping(temp_config)
+    match_results = match_all_schools(test_df, kir_df_filtered, school_mapping, temp_config)
+
+    # Verify match results structure
+    assert 'our_school_name' in match_results.columns
+    assert 'match_method' in match_results.columns
+    assert 'status' in match_results.columns
+    assert len(match_results) > 0
+
+    # Apply matches
+    test_df = apply_matches(test_df, match_results)
+
+    # Verify new columns exist
+    assert 'vármegye' in test_df.columns, "vármegye column should be added"
+    assert 'régió' in test_df.columns, "régió column should be added"
+
+    # Verify some schools matched (not all dropped)
+    final_count = len(test_df)
+    assert final_count > 0, "Should have some matched schools"
+    assert final_count <= original_count, "Final count should be <= original count"
+
+    # Verify audit file generation
+    audit_path = tmp_path / 'audit.csv'
+    generate_audit_file(match_results, audit_path)
+    assert audit_path.exists(), "Audit file should be created"
+
+    audit_df = pd.read_csv(audit_path, sep=';', encoding='utf-8')
+    assert len(audit_df) == len(match_results), "Audit file should have all match results"
+    
+    # Verify at least some schools were matched (not all dropped)
+    applied_count = len(match_results[match_results['status'] == 'APPLIED'])
+    assert applied_count > 0, "Should have at least some matched schools"

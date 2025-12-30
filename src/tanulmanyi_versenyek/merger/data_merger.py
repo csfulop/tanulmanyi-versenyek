@@ -80,7 +80,7 @@ def merge_processed_data(cfg):
 
     return master_df, duplicates_removed
 
-def generate_validation_report(df, cfg, duplicates_removed=0, city_corrections=0):
+def generate_validation_report(df, cfg, duplicates_removed=0, city_corrections=0, match_results=None):
     """
     Generate a validation report with data quality metrics.
 
@@ -89,6 +89,7 @@ def generate_validation_report(df, cfg, duplicates_removed=0, city_corrections=0
         cfg: Configuration dictionary
         duplicates_removed: Number of duplicate rows removed during merge
         city_corrections: Number of city corrections applied
+        match_results: Optional DataFrame with school matching results
     """
     report_path = Path(cfg['paths']['validation_report'])
 
@@ -106,6 +107,17 @@ def generate_validation_report(df, cfg, duplicates_removed=0, city_corrections=0
         'unique_schools': unique_schools,
         'city_corrections_applied': city_corrections
     }
+
+    if match_results is not None:
+        report['school_matching'] = {
+            'total_schools': len(match_results),
+            'manual_matches': len(match_results[match_results['match_method'] == 'MANUAL']),
+            'auto_high_confidence': len(match_results[match_results['match_method'] == 'AUTO_HIGH']),
+            'auto_medium_confidence': len(match_results[match_results['match_method'] == 'AUTO_MEDIUM']),
+            'dropped_low_confidence': len(match_results[match_results['match_method'] == 'DROPPED']),
+            'records_kept': len(match_results[match_results['status'] == 'APPLIED']),
+            'records_dropped': len(match_results[match_results['status'] == 'NOT_APPLIED'])
+        }
 
     with open(report_path, 'w', encoding='utf-8') as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
