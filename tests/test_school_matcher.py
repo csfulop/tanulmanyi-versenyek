@@ -156,7 +156,11 @@ class TestSchoolMatching:
 
     def test_match_school_no_candidates(self, kir_df, test_config):
         result = match_school('Nonexistent School', 'Nonexistent City', kir_df, {}, test_config)
-        assert result is None
+        assert result is not None
+        assert result['match_method'] == 'NO_MATCH'
+        assert result['matched_school_name'] is None
+        assert result['confidence_score'] is None
+        assert 'No schools found in this city' in result['comment']
 
     def test_match_school_budapest_no_district(self, kir_df, test_config):
         # Find a Budapest school in KIR
@@ -205,10 +209,10 @@ class TestMatchApplication:
         result_df = apply_matches(our_df, match_results)
 
         assert len(result_df) == 1
-        assert 'vármegye' in result_df.columns
-        assert 'régió' in result_df.columns
+        assert 'varmegye' in result_df.columns
+        assert 'regio' in result_df.columns
         assert result_df.iloc[0]['iskola_nev'] == real_school['Intézmény megnevezése']
-        assert pd.notna(result_df.iloc[0]['vármegye'])
+        assert pd.notna(result_df.iloc[0]['varmegye'])
 
     def test_apply_matches_drops_unmatched(self):
         our_df = pd.DataFrame({

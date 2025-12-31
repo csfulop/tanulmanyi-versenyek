@@ -76,10 +76,10 @@ def test_end_to_end_download_and_parse(downloaded_html, config):
     
     # Verify structure
     assert df.shape[0] > 0, "DataFrame should have rows"
-    assert df.shape[1] == 7, f"DataFrame should have 7 columns, got {df.shape[1]}"
+    assert df.shape[1] == 8, f"DataFrame should have 8 columns, got {df.shape[1]}"
     
     # Verify columns
-    expected_columns = ['ev', 'targy', 'iskola_nev', 'varos', 'megye', 'helyezes', 'evfolyam']
+    expected_columns = ['ev', 'targy', 'iskola_nev', 'varos', 'varmegye', 'regio', 'helyezes', 'evfolyam']
     assert list(df.columns) == expected_columns, f"Unexpected columns: {list(df.columns)}"
     
     # Verify data types
@@ -203,8 +203,8 @@ def test_full_pipeline_with_kir(downloaded_html, downloaded_kir_file, config, tm
     test_df = apply_matches(test_df, match_results)
 
     # Verify new columns exist
-    assert 'vármegye' in test_df.columns, "vármegye column should be added"
-    assert 'régió' in test_df.columns, "régió column should be added"
+    assert 'varmegye' in test_df.columns, "varmegye column should be added"
+    assert 'regio' in test_df.columns, "regio column should be added"
 
     # Verify some schools matched (not all dropped)
     final_count = len(test_df)

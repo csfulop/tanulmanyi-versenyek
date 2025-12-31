@@ -147,11 +147,12 @@ class HtmlTableParser:
         df['evfolyam'] = metadata['grade']
         df['targy'] = self.config['data_source']['subject']
         
-        # Add megye column (not available in HTML, will be empty for MVP)
-        df['megye'] = ''
+        # Add geographic columns (will be populated by school matching)
+        df['varmegye'] = ''
+        df['regio'] = ''
         
         # Select and order columns according to target schema
-        result_df = df[['ev', 'targy', 'iskola_nev', 'varos', 'megye', 'helyezes', 'evfolyam']].copy()
+        result_df = df[['ev', 'targy', 'iskola_nev', 'varos', 'varmegye', 'regio', 'helyezes', 'evfolyam']].copy()
         
         # Clean string columns
         result_df['iskola_nev'] = result_df['iskola_nev'].str.strip()

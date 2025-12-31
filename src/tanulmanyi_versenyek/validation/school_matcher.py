@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Dict, Tuple
 
 import pandas as pd
 from rapidfuzz import fuzz
@@ -106,7 +106,7 @@ def match_school(
     kir_df: pd.DataFrame,
     manual_mapping: Dict,
     config
-) -> Optional[dict]:
+) -> dict:
     """Find best match for a school in KIR database."""
     key = (our_name, our_city)
     if key in manual_mapping:
@@ -116,7 +116,15 @@ def match_school(
         kir_match = kir_df[kir_df['Intézmény megnevezése'] == corrected_name]
         if len(kir_match) == 0:
             log.warning(f"Manual mapping references non-existent KIR school: {corrected_name}")
-            return None
+            return {
+                'matched_school_name': None,
+                'matched_city': None,
+                'matched_county': None,
+                'matched_region': None,
+                'confidence_score': None,
+                'match_method': 'NO_MATCH',
+                'comment': 'Manual mapping references non-existent KIR school'
+            }
 
         kir_row = kir_match.iloc[0]
         return {
@@ -136,7 +144,15 @@ def match_school(
             candidates.append(kir_row)
 
     if not candidates:
-        return None
+        return {
+            'matched_school_name': None,
+            'matched_city': None,
+            'matched_county': None,
+            'matched_region': None,
+            'confidence_score': None,
+            'match_method': 'NO_MATCH',
+            'comment': 'No schools found in this city in KIR database'
+        }
 
     best_match = None
     best_score = 0
@@ -153,7 +169,15 @@ def match_school(
     high_threshold = config['matching']['high_confidence_threshold']
 
     if best_score < medium_threshold:
-        return None
+        return {
+            'matched_school_name': best_match['Intézmény megnevezése'],
+            'matched_city': best_match['A feladatellátási hely települése'],
+            'matched_county': best_match['A feladatellátási hely vármegyéje'],
+            'matched_region': best_match['A feladatellátási hely régiója'],
+            'confidence_score': best_score,
+            'match_method': 'DROPPED',
+            'comment': f'Low confidence (score < {medium_threshold}) - needs manual review'
+        }
 
     match_method = 'AUTO_HIGH' if best_score >= high_threshold else 'AUTO_MEDIUM'
 
@@ -184,32 +208,20 @@ def match_all_schools(
 
         match_result = match_school(school_name, city, kir_df, manual_mapping, config)
 
-        if match_result:
-            results.append({
-                'our_school_name': school_name,
-                'our_city': city,
-                'matched_school_name': match_result['matched_school_name'],
-                'matched_city': match_result['matched_city'],
-                'matched_county': match_result['matched_county'],
-                'matched_region': match_result['matched_region'],
-                'confidence_score': match_result['confidence_score'],
-                'match_method': match_result['match_method'],
-                'status': 'APPLIED',
-                'comment': match_result['comment']
-            })
-        else:
-            results.append({
-                'our_school_name': school_name,
-                'our_city': city,
-                'matched_school_name': None,
-                'matched_city': None,
-                'matched_county': None,
-                'matched_region': None,
-                'confidence_score': None,
-                'match_method': 'DROPPED',
-                'status': 'NOT_APPLIED',
-                'comment': 'Low confidence - needs manual review'
-            })
+        status = 'APPLIED' if match_result['match_method'] in ['MANUAL', 'AUTO_HIGH', 'AUTO_MEDIUM'] else 'NOT_APPLIED'
+
+        results.append({
+            'our_school_name': school_name,
+            'our_city': city,
+            'matched_school_name': match_result['matched_school_name'],
+            'matched_city': match_result['matched_city'],
+            'matched_county': match_result['matched_county'],
+            'matched_region': match_result['matched_region'],
+            'confidence_score': match_result['confidence_score'],
+            'match_method': match_result['match_method'],
+            'status': status,
+            'comment': match_result['comment']
+        })
 
     results_df = pd.DataFrame(results)
 
@@ -217,11 +229,12 @@ def match_all_schools(
     auto_high_count = len(results_df[results_df['match_method'] == 'AUTO_HIGH'])
     auto_medium_count = len(results_df[results_df['match_method'] == 'AUTO_MEDIUM'])
     dropped_count = len(results_df[results_df['match_method'] == 'DROPPED'])
+    no_match_count = len(results_df[results_df['match_method'] == 'NO_MATCH'])
 
     log.info(
         f"Matched {len(results_df)} schools: "
         f"{manual_count} manual, {auto_high_count} high-conf, "
-        f"{auto_medium_count} medium-conf, {dropped_count} dropped"
+        f"{auto_medium_count} medium-conf, {dropped_count} dropped, {no_match_count} no-match"
     )
 
     return results_df
@@ -231,8 +244,8 @@ def apply_matches(our_df: pd.DataFrame, match_results: pd.DataFrame) -> pd.DataF
     """Apply school matches to competition DataFrame."""
     result_df = our_df.copy()
 
-    result_df['vármegye'] = None
-    result_df['régió'] = None
+    result_df['varmegye'] = None
+    result_df['regio'] = None
 
     match_lookup = {}
     for _, row in match_results.iterrows():
@@ -253,8 +266,8 @@ def apply_matches(our_df: pd.DataFrame, match_results: pd.DataFrame) -> pd.DataF
             city = match['matched_city']
             city = city.replace(" kerület", "").replace(" ker.", "")
             result_df.at[idx, 'varos'] = city
-            result_df.at[idx, 'vármegye'] = match['matched_county']
-            result_df.at[idx, 'régió'] = match['matched_region']
+            result_df.at[idx, 'varmegye'] = match['matched_county']
+            result_df.at[idx, 'regio'] = match['matched_region']
             rows_to_keep.append(idx)
 
     result_df = result_df.loc[rows_to_keep]

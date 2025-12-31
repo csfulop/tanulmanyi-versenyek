@@ -129,10 +129,10 @@ def test_parse_with_committed_fixture(config):
         
         # Verify structure
         assert df.shape[0] == 3, "Should have 3 rows from fixture"
-        assert df.shape[1] == 7, "Should have 7 columns"
+        assert df.shape[1] == 8, "Should have 8 columns"
         
         # Verify columns
-        expected_columns = ['ev', 'targy', 'iskola_nev', 'varos', 'megye', 'helyezes', 'evfolyam']
+        expected_columns = ['ev', 'targy', 'iskola_nev', 'varos', 'varmegye', 'regio', 'helyezes', 'evfolyam']
         assert list(df.columns) == expected_columns
         
         # Verify data types

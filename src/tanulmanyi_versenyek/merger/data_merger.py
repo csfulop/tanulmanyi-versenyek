@@ -115,6 +115,7 @@ def generate_validation_report(df, cfg, duplicates_removed=0, city_corrections=0
             'auto_high_confidence': len(match_results[match_results['match_method'] == 'AUTO_HIGH']),
             'auto_medium_confidence': len(match_results[match_results['match_method'] == 'AUTO_MEDIUM']),
             'dropped_low_confidence': len(match_results[match_results['match_method'] == 'DROPPED']),
+            'no_match': len(match_results[match_results['match_method'] == 'NO_MATCH']),
             'records_kept': len(match_results[match_results['status'] == 'APPLIED']),
             'records_dropped': len(match_results[match_results['status'] == 'NOT_APPLIED'])
         }
