@@ -1,3 +1,5 @@
 original_city;corrected_city;comment
 Debrecen-Józsa;Debrecen;Map suburb to parent city
 MISKOLC;Miskolc;Normalize case to proper case
+Debrecen (Józsa);Debrecen;Map suburb to parent city
+Tasnád;;DROP: Erdély
