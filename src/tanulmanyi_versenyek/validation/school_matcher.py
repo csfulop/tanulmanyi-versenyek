@@ -1,6 +1,7 @@
 """School name matching against KIR database."""
 
 import logging
+import re
 from pathlib import Path
 from typing import Dict, Tuple
 
@@ -8,6 +9,35 @@ import pandas as pd
 from rapidfuzz import fuzz
 
 log = logging.getLogger(__name__.split('.')[-1])
+
+
+def _normalize_case_if_uppercase(text: str) -> str:
+    """Convert FULL UPPERCASE to normal case with exceptions."""
+    if pd.isna(text):
+        return text
+    
+    # Only transform if ENTIRE string is uppercase
+    if text != text.upper():
+        return text
+    
+    # Hardcoded lowercase words (common Hungarian conjunctions/articles)
+    lowercase_words = {'és', 'a', 'az', 'de', 'vagy'}
+    
+    words = text.split()
+    normalized = []
+    
+    for i, word in enumerate(words):
+        # Check for Roman numeral with dot (e.g., "XII.")
+        if re.match(r'^[IVX]+\.$', word):
+            # Keep uppercase: "XII."
+            normalized.append(word)
+        # Check if word is lowercase exception
+        elif word.lower() in lowercase_words:
+            normalized.append(word.lower())
+        else:
+            normalized.append(word.title())
+    
+    return ' '.join(normalized)
 
 
 def load_kir_database(config) -> pd.DataFrame:
@@ -29,6 +59,11 @@ def load_kir_database(config) -> pd.DataFrame:
             f"Missing: {missing_columns}\n"
             f"Found: {list(kir_df.columns)}"
         )
+
+    # Normalize FULL UPPERCASE names
+    kir_df['Intézmény megnevezése'] = kir_df['Intézmény megnevezése'].apply(_normalize_case_if_uppercase)
+    if 'A feladatellátási hely megnevezése' in kir_df.columns:
+        kir_df['A feladatellátási hely megnevezése'] = kir_df['A feladatellátási hely megnevezése'].apply(_normalize_case_if_uppercase)
 
     log.info(f"Loaded {len(kir_df)} schools from KIR database")
     return kir_df
@@ -100,6 +135,17 @@ def cities_match(our_city: str, kir_city: str) -> bool:
     return False
 
 
+def _calculate_best_match_score(our_name: str, candidate: pd.Series) -> float:
+    """Calculate best fuzzy match score across both name columns."""
+    scores = []
+    for column in ['Intézmény megnevezése', 'A feladatellátási hely megnevezése']:
+        if pd.notna(candidate.get(column)):
+            kir_name = candidate[column]
+            score = fuzz.token_set_ratio(our_name, kir_name)
+            scores.append(score)
+    return max(scores) if scores else 0
+
+
 def match_school(
     our_name: str,
     our_city: str,
@@ -112,6 +158,17 @@ def match_school(
     if key in manual_mapping:
         manual_entry = manual_mapping[key]
         corrected_name = manual_entry['corrected_school_name']
+
+        if corrected_name == 'DROP':
+            return {
+                'matched_school_name': None,
+                'matched_city': None,
+                'matched_county': None,
+                'matched_region': None,
+                'confidence_score': None,
+                'match_method': 'MANUAL_DROP',
+                'comment': manual_entry['comment']
+            }
 
         kir_match = kir_df[kir_df['Intézmény megnevezése'] == corrected_name]
         if len(kir_match) == 0:
@@ -158,9 +215,7 @@ def match_school(
     best_score = 0
 
     for candidate in candidates:
-        kir_name = candidate['Intézmény megnevezése']
-        score = fuzz.token_set_ratio(our_name, kir_name)
-
+        score = _calculate_best_match_score(our_name, candidate)
         if score > best_score:
             best_score = score
             best_match = candidate
@@ -226,6 +281,7 @@ def match_all_schools(
     results_df = pd.DataFrame(results)
 
     manual_count = len(results_df[results_df['match_method'] == 'MANUAL'])
+    manual_drop_count = len(results_df[results_df['match_method'] == 'MANUAL_DROP'])
     auto_high_count = len(results_df[results_df['match_method'] == 'AUTO_HIGH'])
     auto_medium_count = len(results_df[results_df['match_method'] == 'AUTO_MEDIUM'])
     dropped_count = len(results_df[results_df['match_method'] == 'DROPPED'])
@@ -234,7 +290,8 @@ def match_all_schools(
     log.info(
         f"Matched {len(results_df)} schools: "
         f"{manual_count} manual, {auto_high_count} high-conf, "
-        f"{auto_medium_count} medium-conf, {dropped_count} dropped, {no_match_count} no-match"
+        f"{auto_medium_count} medium-conf, {dropped_count} dropped, "
+        f"{no_match_count} no-match, {manual_drop_count} manual-drop"
     )
 
     return results_df

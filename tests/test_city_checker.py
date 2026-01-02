@@ -131,25 +131,27 @@ class TestApplyCityMapping:
     """Tests for apply_city_mapping function."""
 
     def test_apply_corrections(self, sample_dataframe, sample_mapping):
-        corrected_df, count = apply_city_mapping(sample_dataframe, sample_mapping)
+        corrected_df, stats = apply_city_mapping(sample_dataframe, sample_mapping)
 
-        assert count == 2
+        assert stats['corrected'] == 2
+        assert stats['dropped'] == 0
         assert corrected_df.loc[0, 'varos'] == 'City1'
         assert corrected_df.loc[1, 'varos'] == 'City2'
         assert corrected_df.loc[2, 'varos'] == 'City3'
         assert corrected_df.loc[3, 'varos'] == 'City5'
 
     def test_apply_with_empty_mapping(self, sample_dataframe):
-        corrected_df, count = apply_city_mapping(sample_dataframe, {})
+        corrected_df, stats = apply_city_mapping(sample_dataframe, {})
 
-        assert count == 0
+        assert stats['corrected'] == 0
+        assert stats['dropped'] == 0
         pd.testing.assert_frame_equal(corrected_df, sample_dataframe)
 
     def test_apply_creates_copy(self, sample_dataframe, sample_mapping):
         original_city = sample_dataframe.loc[0, 'varos']
-        corrected_df, count = apply_city_mapping(sample_dataframe, sample_mapping)
+        corrected_df, stats = apply_city_mapping(sample_dataframe, sample_mapping)
 
-        assert count == 2
+        assert stats['corrected'] == 2
         assert sample_dataframe.loc[0, 'varos'] == original_city
         assert corrected_df.loc[0, 'varos'] != original_city
 
@@ -160,9 +162,40 @@ class TestApplyCityMapping:
         })
         mapping = {'CITY1': 'City1'}
 
-        corrected_df, count = apply_city_mapping(df, mapping)
+        corrected_df, stats = apply_city_mapping(df, mapping)
 
-        assert count == 2
+        assert stats['corrected'] == 2
+        assert stats['dropped'] == 0
         assert corrected_df.loc[0, 'varos'] == 'City1'
         assert corrected_df.loc[1, 'varos'] == 'City1'
         assert corrected_df.loc[2, 'varos'] == 'City2'
+
+    def test_apply_drop_city(self):
+        df = pd.DataFrame({
+            'iskola_nev': ['School A', 'School B', 'School C'],
+            'varos': ['City1', 'City2', 'City3']
+        })
+        mapping = {'City2': 'DROP'}
+
+        corrected_df, stats = apply_city_mapping(df, mapping)
+
+        assert stats['corrected'] == 0
+        assert stats['dropped'] == 1
+        assert len(corrected_df) == 2
+        assert 'School B' not in corrected_df['iskola_nev'].values
+        assert corrected_df.loc[0, 'iskola_nev'] == 'School A'
+        assert corrected_df.loc[2, 'iskola_nev'] == 'School C'
+
+    def test_apply_drop_and_correct(self):
+        df = pd.DataFrame({
+            'iskola_nev': ['School A', 'School B', 'School C', 'School D'],
+            'varos': ['CITY1', 'City2', 'CITY1', 'City3']
+        })
+        mapping = {'CITY1': 'City1', 'City2': 'DROP'}
+
+        corrected_df, stats = apply_city_mapping(df, mapping)
+
+        assert stats['corrected'] == 2
+        assert stats['dropped'] == 1
+        assert len(corrected_df) == 3
+        assert 'School B' not in corrected_df['iskola_nev'].values

@@ -22,49 +22,35 @@ II. Rákóczi Ferenc Ált. Isk., Gimnázium;Szécsény;II. Rákóczi Ferenc Ált
 II.Rákóczi Ferenc Ált. Isk. és Gimn.;Szentendre;Szentendrei II. Rákóczi Ferenc Általános Iskola és Gimnázium;good match, low confidence
 IV. Béla Kat. Isk. és AMI;Jászfényszaru;IV. Béla Katolikus Általános Iskola és Alapfokú Művészeti Iskola;good match, low confidence
 Jókai M. Ref. Ált. Iskola;Miskolc;Jókai Mór Református Magyar-Angol Két Tanítási Nyelvű Általános Iskola, Alapfokú Művészeti Iskola és Óvoda;good match, low confidence
-PTE Gyakorló Általános Iskola, Gimnázium és Szakgimnázium Általános Iskolája;Pécs;Pécsi Tudományegyetem Gyakorló Általános Iskola, Gimnázium és Óvoda;good match, low confidence
 Patrona Hungariae Katolikus Iskolaközpont;Budapest IX.;Patrona Hungariae Általános Iskola, Gimnázium, Kollégium és Alapfokú Művészeti Iskola;good match, low confidence
 Premontrei Szent Norbert Gimnázium, Egyházzenei Szakközépiskola és Diákotthon;Gödöllő;Premontrei Szent Norbert Gimnázium, Egyházzenei Szakgimnázium, Alapfokú Művészeti Iskola és Kollégium;good match, low confidence
 Prímási Iskolaközpont;Esztergom;Prímási Katolikus Nyelvoktató Német Nemzetiségi Általános Iskola és Óvoda;good match, low confidence
 Szent II. János Pál Iskolaközpont;Budapest XI.;Szent II. János Pál Óvoda, Általános Iskola és Gimnázium;good match, low confidence
-Szent József Iskolaközpont;Szekszárd;Szent József Katolikus Általános Iskola és Óvoda - Katholische Grundschule;good match, low confidence
-Szent Margit Ciszterci Iskolaközpont;Pécs;Szent Margit Ciszterci Óvoda, Általános Iskola, Alapfokú Művészeti Iskola és Kollégium;good match, low confidence
 Szent Orsolya Bencés Iskolaközpont;Dombóvár;Szent Orsolya Bencés Általános Iskola, Alapfokú Művészeti Iskola és Kollégium;good match, low confidence
 Széchenyi István Általános Iskola, Óvoda és Zeneiskola;Jászárokszállás;Jászárokszállási Széchenyi István Általános Iskola és Alapfokú Művészeti Iskola;good match, low confidence
 Tomori Pál Tagiskola;Budapest XIII.;Budapest XIII. Kerületi Tomori Pál Általános Iskola;good match, low confidence
 Táncsics Mihály Ált Isk és Gimn;Budapest XVI.;Budapest XVI. Kerületi Táncsics Mihály Általános Iskola és Gimnázium;good match, low confidence
 Újbudai Alma Mater Általános Iskola, Alapfokú Művészetoktatási Intézmény;Budapest XI.;Új Budai Alma Mater Általános Iskola, Alapfokú Művészeti Iskola és Óvoda;good match, low confidence
-Batthyány Kázmér Általános Iskola;Siklós;Siklósi Táncsics Mihály Gimnázium és Általános Iskola ;manual match
-Bethlen Gábor Református Általános Iskola;Törökszentmiklós;Törökszentmiklósi Református Oktatási Központ - Óvoda, Általános Iskola, Gimnázium, Technikum, Szakképző Iskola, Kollégium és Bölcsőde;manual match
-Budakeszi Német Nemzetiségi Általános Iskola;Budakeszi;BUDAKESZI NÉMET NEMZETISÉGI ÁLTALÁNOS ISKOLA;TODO: do something with such names…
 Chiovini Ferenc Kolping Katolikus Általános Iskola;Besenyszög;Chiovini Ferenc Általános Iskola és Alapfokú Művészeti Iskola;good match, low confidence
 Dunaföldvári Magyar László Gimnázium;Dunaföldvár;Magyar László Görögkatolikus Gimnázium és Technikum;good match, low confidence
 EKE Gyakorlóiskola;Eger;Eszterházy Károly Katolikus Egyetem Gyakorló Általános Iskola, Gimnázium, Alapfokú Művészeti Iskola és Technikum;manual match
 EKKE Gyakorlóiskola;Eger;Eszterházy Károly Katolikus Egyetem Gyakorló Általános Iskola, Gimnázium, Alapfokú Művészeti Iskola és Technikum;manual match
 GYAKI 5. sz. Ált. Isk. és Sportiskola Tagintézménye;Gyula;Gyulai Implom József Általános Iskola;manual match
 Honvéd Utcai Tagiskola;Kaposvár;Kaposvári Kodály Zoltán Központi Általános Iskola;manual match
-Kanizsai Dorottya Általános Iskola;Siklós;Siklósi Táncsics Mihály Gimnázium és Általános Iskola ;manual match
-Karácsonyi János Katolikus Általános Iskola;Gyula;Gyulai Római Katolikus Gimnázium, Általános Iskola, Óvoda és Kollégium;manual match
 Kisfaludy Utcai Tagiskola;Kaposvár;Kaposvári Kodály Zoltán Központi Általános Iskola;manual match
-Kossuth Lajos Evangélikus Óvoda, Általános Iskola, Gimnázium és Pedagógiai Szakközépiskola;Miskolc;Kossuth Lajos Evangélikus Óvoda, Általános Iskola és Alapfokú Művészeti Iskola, Gimnázium, Szakgimnázium és Technikum;"manual match; TODO: search in “intézmény megnevezése”"
+Kossuth Lajos Evangélikus Óvoda, Általános Iskola, Gimnázium és Pedagógiai Szakközépiskola;Miskolc;Kossuth Lajos Evangélikus Óvoda, Általános Iskola és Alapfokú Művészeti Iskola, Gimnázium, Szakgimnázium és Technikum;manual match
 Mezőkovácsházi Csanád Vezér Általános Iskola és AMI;Mezőkovácsháza;Mezőkovácsházi Hunyadi János Általános Iskola, Gimnázium és Kollégium;megszűnt, jogutód
-PTE GYÁIG Deák Ferenc Általános Iskolája;Pécs;Pécsi Tudományegyetem Gyakorló Általános Iskola, Gimnázium és Óvoda;manual match
 PTE Gyak. Ált. Isk., Gimn. és Szakk. Deák F. Gimnáziuma és Általános Iskolája;Pécs;Pécsi Tudományegyetem Gyakorló Általános Iskola, Gimnázium és Óvoda;manual match
-PTE Gyakorló Általános Iskola és Gimnázium 1. Számú Általános Iskolája;Pécs;Pécsi Tudományegyetem Gyakorló Általános Iskola, Gimnázium és Óvoda;manual match
-PTE Gyakoró Általános Iskola és Gimnázium 1. Számú Általános Iskolája;Pécs;Pécsi Tudományegyetem Gyakorló Általános Iskola, Gimnázium és Óvoda;manual match
 Premontrei Iskolaközpont;Gödöllő;Premontrei Szent Norbert Gimnázium, Egyházzenei Szakgimnázium, Alapfokú Művészeti Iskola és Kollégium;manual match
 Rónai Ferenc Tagiskola;Miskolc;Miskolci Petőfi Sándor Általános Iskola;manual match
 Rózsadombi Általános Iskola;Budapest II.;Pitypang Utcai Általános Iskola;manual match
 Szabó Magda Magyar- Angol Kéttannyelvű Általános Iskola;Budapest II.;Szabó Magda Magyar-Angol Két Tanítási Nyelvű Általános Iskola;manual match
-Taksony Vezér Német Nemzetiségi Általános Iskola;Taksony;TAKSONY VEZÉR NÉMET NEMZETISÉGI ÁLTALÁNOS ISKOLA;TODO: do something with such names…
 Tapolcai Ált. Isk. Batsányi J. Tagintézmény;Tapolca;Tapolcai Bárdos Lajos Általános Iskola;manual match
-Zrínyi Ilona Magyar-Angol Két Tanítási Nyelvű Tagiskola;Kaposvár;Kaposvári Kodály Zoltán Központi Általános Iskola;manual match
 Csikihegyek Általános Iskola;Budapest XI.;Gazdagréti Sport Általános Iskola;manual match
-Fóti Ökumenikus Általános Iskola és Gimnázium;Fót;;megszűnt
+Fóti Ökumenikus Általános Iskola és Gimnázium;Fót;DROP;megszűnt
 Gazdagrét-Csíkihegyek Általános Iskola;Budapest XI.;Gazdagréti Sport Általános Iskola;manual match
 Hegyháti Általános Iskola és Alapfokú Művészeti Iskola;Mágocs;Mágocsi Általános Iskola ;manual match
 Mustármag Keresztény Óvoda, Általános Iskola és Gimnázium;Budapest III.;Szent József Katolikus Óvoda, Általános Iskola és Gimnázium;manual match
 Rózsadombi Általános Iskola;Budapest;Pitypang Utcai Általános Iskola;manual match
-Somogyi Imre Általános Iskola;Abony;Török János Református Oktatási Központ - Általános Iskola, Gimnázium, Szakgimnázium, Technikum, Szakképző Iskola és Bölcsőde;manual match
 Szent Imre Katolikus Gimnázium,Általános Iskola,Kollégium,Óvoda és Alapfokú Művészeti Iskola;Nyíregyháza;Szent Imre Katolikus Gimnázium, Két Tanítási Nyelvű Általános Iskola, Kollégium, Óvoda és Alapfokú Művészeti Iskola;manual match
 Vénkerti Általános Iskola, Óvoda és AMI;Debrecen;Vénkerti Általános Iskola és Alapfokú Művészeti Iskola;manual match

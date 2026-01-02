@@ -64,7 +64,7 @@ def load_city_mapping(config: dict) -> Dict[str, str]:
     return mapping
 
 
-def apply_city_mapping(df: pd.DataFrame, mapping: Dict[str, str]) -> tuple[pd.DataFrame, int]:
+def apply_city_mapping(df: pd.DataFrame, mapping: Dict[str, str]) -> tuple[pd.DataFrame, dict]:
     """Apply city name corrections to DataFrame.
 
     Args:
@@ -72,20 +72,31 @@ def apply_city_mapping(df: pd.DataFrame, mapping: Dict[str, str]) -> tuple[pd.Da
         mapping: City mapping dictionary from load_city_mapping()
 
     Returns:
-        Tuple of (corrected DataFrame, number of corrections applied)
+        Tuple of (corrected DataFrame, dict with 'corrected' and 'dropped' counts)
     """
     corrected_df = df.copy()
-    corrections_count = 0
+    corrected_count = 0
+    dropped_count = 0
 
     if mapping:
+        rows_to_drop = []
         for idx, row in corrected_df.iterrows():
             if row['varos'] in mapping:
                 original = row['varos']
                 corrected = mapping[original]
-                log.debug(f"Applied: \"{original}\" → \"{corrected}\"")
-                corrected_df.at[idx, 'varos'] = corrected
-                corrections_count += 1
+                
+                if corrected == 'DROP':
+                    log.debug(f"Marked for drop: \"{original}\"")
+                    rows_to_drop.append(idx)
+                    dropped_count += 1
+                else:
+                    log.debug(f"Applied: \"{original}\" → \"{corrected}\"")
+                    corrected_df.at[idx, 'varos'] = corrected
+                    corrected_count += 1
+        
+        if rows_to_drop:
+            corrected_df = corrected_df.drop(rows_to_drop)
+        
+        log.info(f"Applied {corrected_count} city corrections, dropped {dropped_count} schools from excluded cities")
 
-        log.info(f"Applied {corrections_count} city corrections")
-
-    return corrected_df, corrections_count
+    return corrected_df, {'corrected': corrected_count, 'dropped': dropped_count}

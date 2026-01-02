@@ -116,6 +116,33 @@ class TestKIRDatabase:
         with pytest.raises(FileNotFoundError):
             load_kir_database(test_config)
 
+    def test_load_kir_database_normalizes_uppercase(self, tmp_path, test_config):
+        # Create test Excel with FULL UPPERCASE names
+        test_file = tmp_path / 'test_kir.xlsx'
+        test_df = pd.DataFrame({
+            'Intézmény megnevezése': [
+                'BUDAKESZI NÉMET NEMZETISÉGI ÁLTALÁNOS ISKOLA',
+                'BUDAPEST XII. KERÜLETI ÁLTALÁNOS ISKOLA',
+                'BUDAPEST II. KER. ISKOLA',
+                'BUDAPEST III. SZ. ISKOLA',
+                'Normal Case School'
+            ],
+            'A feladatellátási hely települése': ['Budapest'] * 5,
+            'A feladatellátási hely vármegyéje': ['Budapest'] * 5,
+            'A feladatellátási hely régiója': ['Közép-Magyarország'] * 5
+        })
+        test_df.to_excel(test_file, index=False)
+        
+        test_config['kir']['locations_file'] = str(test_file)
+        kir_df = load_kir_database(test_config)
+        
+        # Check transformations
+        assert kir_df.iloc[0]['Intézmény megnevezése'] == 'Budakeszi Német Nemzetiségi Általános Iskola'
+        assert kir_df.iloc[1]['Intézmény megnevezése'] == 'Budapest XII. Kerületi Általános Iskola'
+        assert kir_df.iloc[2]['Intézmény megnevezése'] == 'Budapest II. Ker. Iskola'
+        assert kir_df.iloc[3]['Intézmény megnevezése'] == 'Budapest III. Sz. Iskola'
+        assert kir_df.iloc[4]['Intézmény megnevezése'] == 'Normal Case School'  # Unchanged
+
 
 class TestSchoolMatching:
     """Tests for school matching logic."""
@@ -175,6 +202,41 @@ class TestSchoolMatching:
 
         assert result is not None, "Budapest special case should match schools in any Budapest district"
         assert 'Budapest' in result['matched_city']
+
+    def test_match_school_manual_drop(self, kir_df, test_config):
+        manual_mapping = {
+            ('Closed School', 'Budapest'): {
+                'corrected_school_name': 'DROP',
+                'comment': 'School closed in 2020'
+            }
+        }
+
+        result = match_school('Closed School', 'Budapest', kir_df, manual_mapping, test_config)
+
+        assert result is not None
+        assert result['match_method'] == 'MANUAL_DROP'
+        assert result['matched_school_name'] is None
+        assert result['confidence_score'] is None
+        assert result['comment'] == 'School closed in 2020'
+
+    def test_match_school_dual_column(self, test_config):
+        # Create test KIR data with different institution and facility names
+        kir_df = pd.DataFrame({
+            'Intézmény megnevezése': ['Long Official Institution Name'],
+            'A feladatellátási hely megnevezése': ['Short Facility Name'],
+            'A feladatellátási hely települése': ['Budapest'],
+            'A feladatellátási hely vármegyéje': ['Budapest'],
+            'A feladatellátási hely régiója': ['Közép-Magyarország']
+        })
+
+        # Search with facility name (should match better than institution name)
+        result = match_school('Short Facility Name', 'Budapest', kir_df, {}, test_config)
+
+        assert result is not None
+        assert result['match_method'] in ['AUTO_HIGH', 'AUTO_MEDIUM']
+        # Should return institution name, not facility name
+        assert result['matched_school_name'] == 'Long Official Institution Name'
+        assert result['confidence_score'] >= test_config['matching']['medium_confidence_threshold']
 
 
 class TestMatchApplication:

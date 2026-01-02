@@ -72,7 +72,7 @@ def main():
 
         log.info("Applying city corrections...")
         city_mapping = load_city_mapping(cfg)
-        master_df, corrections_applied = apply_city_mapping(master_df, city_mapping)
+        master_df, city_corrections = apply_city_mapping(master_df, city_mapping)
 
         log.info("Loading KIR database...")
         kir_df = load_kir_database(cfg)
@@ -97,7 +97,7 @@ def main():
         master_df.to_csv(master_csv_path, sep=';', encoding='utf-8', index=False)
         log.info(f"Master CSV saved to {master_csv_path}")
 
-        generate_validation_report(master_df, cfg, duplicates_removed, corrections_applied, match_results)
+        generate_validation_report(master_df, cfg, duplicates_removed, city_corrections, match_results)
         generate_excel_report(master_df, cfg)
 
         log.info("Script completed successfully")
