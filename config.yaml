@@ -52,11 +52,6 @@ kir:
   index_url: "https://kir.oktatas.hu/kirpub/index"
   locations_file: "data/helper_data/kir_feladatellatasi_helyek.xlsx"
   locations_filename_pattern: "kir_mukodo_feladatellatasi_helyek_{date}.xlsx"
-  required_columns:
-    - "Intézmény megnevezése"
-    - "A feladatellátási hely települése"
-    - "A feladatellátási hely vármegyéje"
-    - "A feladatellátási hely régiója"
 
 matching:
   high_confidence_threshold: 90

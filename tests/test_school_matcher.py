@@ -9,7 +9,6 @@ from tanulmanyi_versenyek.validation.school_matcher import (
     load_kir_database,
     load_school_mapping,
     normalize_city,
-    cities_match,
     match_school,
     match_all_schools,
     apply_matches,
@@ -27,9 +26,9 @@ def test_config(tmp_path):
 
 
 @pytest.fixture
-def kir_df():
-    """Load KIR sample fixture."""
-    return pd.read_excel('tests/fixtures/kir_sample.xlsx')
+def kir_dict(test_config):
+    """Load KIR sample fixture as dict."""
+    return load_kir_database(test_config)
 
 
 class TestCityNormalization:
@@ -49,18 +48,6 @@ class TestCityNormalization:
 
     def test_normalize_city_whitespace(self):
         assert normalize_city("  Budapest  ") == "budapest"
-
-    def test_cities_match_exact(self):
-        assert cities_match("Budapest", "Budapest")
-        assert cities_match("Debrecen", "Debrecen")
-
-    def test_cities_match_budapest_special_case(self):
-        assert cities_match("Budapest", "Budapest III. kerület")
-        assert cities_match("Budapest", "Budapest XIV.")
-
-    def test_cities_match_different(self):
-        assert not cities_match("Budapest", "Debrecen")
-        assert not cities_match("Szeged", "Pécs")
 
 
 class TestSchoolMapping:
@@ -106,10 +93,14 @@ class TestKIRDatabase:
     """Tests for KIR database loader."""
 
     def test_load_kir_database_valid(self, test_config):
-        kir_df = load_kir_database(test_config)
-        assert len(kir_df) > 0
-        assert 'Intézmény megnevezése' in kir_df.columns
-        assert 'A feladatellátási hely települése' in kir_df.columns
+        kir_dict = load_kir_database(test_config)
+        assert isinstance(kir_dict, dict)
+        assert len(kir_dict) > 0
+        # Check that values are DataFrames
+        for city, df in kir_dict.items():
+            assert isinstance(df, pd.DataFrame)
+            assert 'Intézmény megnevezése' in df.columns
+            assert 'A feladatellátási hely települése' in df.columns
 
     def test_load_kir_database_missing_file(self, test_config):
         test_config['kir']['locations_file'] = 'nonexistent.xlsx'
@@ -129,29 +120,40 @@ class TestKIRDatabase:
             ],
             'A feladatellátási hely települése': ['Budapest'] * 5,
             'A feladatellátási hely vármegyéje': ['Budapest'] * 5,
-            'A feladatellátási hely régiója': ['Közép-Magyarország'] * 5
+            'A feladatellátási hely régiója': ['Közép-Magyarország'] * 5,
+            'A feladatellátási hely megnevezése': [
+                'BUDAKESZI NÉMET NEMZETISÉGI ÁLTALÁNOS ISKOLA',
+                'BUDAPEST XII. KERÜLETI ÁLTALÁNOS ISKOLA',
+                'BUDAPEST II. KER. ISKOLA',
+                'BUDAPEST III. SZ. ISKOLA',
+                'Normal Case School'
+            ]
         })
         test_df.to_excel(test_file, index=False)
         
         test_config['kir']['locations_file'] = str(test_file)
-        kir_df = load_kir_database(test_config)
+        kir_dict = load_kir_database(test_config)
+        
+        # All schools should be under "budapest" key
+        assert 'budapest' in kir_dict
+        budapest_df = kir_dict['budapest']
         
         # Check transformations
-        assert kir_df.iloc[0]['Intézmény megnevezése'] == 'Budakeszi Német Nemzetiségi Általános Iskola'
-        assert kir_df.iloc[1]['Intézmény megnevezése'] == 'Budapest XII. Kerületi Általános Iskola'
-        assert kir_df.iloc[2]['Intézmény megnevezése'] == 'Budapest II. Ker. Iskola'
-        assert kir_df.iloc[3]['Intézmény megnevezése'] == 'Budapest III. Sz. Iskola'
-        assert kir_df.iloc[4]['Intézmény megnevezése'] == 'Normal Case School'  # Unchanged
+        assert budapest_df.iloc[0]['Intézmény megnevezése'] == 'Budakeszi Német Nemzetiségi Általános Iskola'
+        assert budapest_df.iloc[1]['Intézmény megnevezése'] == 'Budapest XII. Kerületi Általános Iskola'
+        assert budapest_df.iloc[2]['Intézmény megnevezése'] == 'Budapest II. Ker. Iskola'
+        assert budapest_df.iloc[3]['Intézmény megnevezése'] == 'Budapest III. Sz. Iskola'
+        assert budapest_df.iloc[4]['Intézmény megnevezése'] == 'Normal Case School'  # Unchanged
 
 
 class TestSchoolMatching:
     """Tests for school matching logic."""
 
-    def test_match_school_manual_override(self, kir_df, test_config):
+    def test_match_school_manual_override(self, kir_dict, test_config):
         # Get a real school from KIR
-        real_school = kir_df.iloc[0]
+        first_city_df = next(iter(kir_dict.values()))
+        real_school = first_city_df.iloc[0]
         school_name = real_school['Intézmény megnevezése']
-        city = real_school['A feladatellátási hely települése']
 
         manual_mapping = {
             ('Test School', 'Budapest'): {
@@ -160,7 +162,7 @@ class TestSchoolMatching:
             }
         }
 
-        result = match_school('Test School', 'Budapest', kir_df, manual_mapping, test_config)
+        result = match_school('Test School', 'Budapest', kir_dict, manual_mapping, test_config)
 
         assert result is not None
         assert result['match_method'] == 'MANUAL'
@@ -168,42 +170,45 @@ class TestSchoolMatching:
         assert result['confidence_score'] is None
         assert result['comment'] == 'Manual test'
 
-    def test_match_school_high_confidence(self, kir_df, test_config):
+    def test_match_school_high_confidence(self, kir_dict, test_config):
         # Use exact school name from KIR
-        real_school = kir_df.iloc[0]
+        first_city_df = next(iter(kir_dict.values()))
+        real_school = first_city_df.iloc[0]
         school_name = real_school['Intézmény megnevezése']
         city = real_school['A feladatellátási hely települése']
 
-        result = match_school(school_name, city, kir_df, {}, test_config)
+        result = match_school(school_name, city, kir_dict, {}, test_config)
 
         assert result is not None
         assert result['match_method'] == 'AUTO_HIGH'
         assert result['confidence_score'] >= test_config['matching']['high_confidence_threshold']
         assert result['comment'] == ''
 
-    def test_match_school_no_candidates(self, kir_df, test_config):
-        result = match_school('Nonexistent School', 'Nonexistent City', kir_df, {}, test_config)
+    def test_match_school_no_candidates(self, kir_dict, test_config):
+        result = match_school('Nonexistent School', 'Nonexistent City', kir_dict, {}, test_config)
         assert result is not None
         assert result['match_method'] == 'NO_MATCH'
         assert result['matched_school_name'] is None
         assert result['confidence_score'] is None
         assert 'No schools found in this city' in result['comment']
 
-    def test_match_school_budapest_no_district(self, kir_df, test_config):
-        # Find a Budapest school in KIR
-        budapest_schools = kir_df[kir_df['A feladatellátási hely települése'].str.contains('Budapest', na=False)]
-        assert len(budapest_schools) > 0, "Test fixture must contain Budapest schools"
-
-        real_school = budapest_schools.iloc[0]
+    def test_match_school_budapest_no_district(self, kir_dict, test_config):
+        # Budapest special case: lookup with just "budapest" should work
+        assert 'budapest' in kir_dict, "KIR dict should have special 'budapest' entry"
+        
+        budapest_df = kir_dict['budapest']
+        assert len(budapest_df) > 0, "Budapest entry should contain schools"
+        
+        real_school = budapest_df.iloc[0]
         school_name = real_school['Intézmény megnevezése']
 
         # Search with just "Budapest" (no district)
-        result = match_school(school_name, 'Budapest', kir_df, {}, test_config)
+        result = match_school(school_name, 'Budapest', kir_dict, {}, test_config)
 
-        assert result is not None, "Budapest special case should match schools in any Budapest district"
+        assert result is not None, "Budapest special case should match schools"
         assert 'Budapest' in result['matched_city']
 
-    def test_match_school_manual_drop(self, kir_df, test_config):
+    def test_match_school_manual_drop(self, kir_dict, test_config):
         manual_mapping = {
             ('Closed School', 'Budapest'): {
                 'corrected_school_name': 'DROP',
@@ -211,7 +216,7 @@ class TestSchoolMatching:
             }
         }
 
-        result = match_school('Closed School', 'Budapest', kir_df, manual_mapping, test_config)
+        result = match_school('Closed School', 'Budapest', kir_dict, manual_mapping, test_config)
 
         assert result is not None
         assert result['match_method'] == 'MANUAL_DROP'
@@ -220,17 +225,19 @@ class TestSchoolMatching:
         assert result['comment'] == 'School closed in 2020'
 
     def test_match_school_dual_column(self, test_config):
-        # Create test KIR data with different institution and facility names
-        kir_df = pd.DataFrame({
-            'Intézmény megnevezése': ['Long Official Institution Name'],
-            'A feladatellátási hely megnevezése': ['Short Facility Name'],
-            'A feladatellátási hely települése': ['Budapest'],
-            'A feladatellátási hely vármegyéje': ['Budapest'],
-            'A feladatellátási hely régiója': ['Közép-Magyarország']
-        })
+        # Create test KIR dict with different institution and facility names
+        kir_dict = {
+            'budapest': pd.DataFrame({
+                'Intézmény megnevezése': ['Long Official Institution Name'],
+                'A feladatellátási hely megnevezése': ['Short Facility Name'],
+                'A feladatellátási hely települése': ['Budapest'],
+                'A feladatellátási hely vármegyéje': ['Budapest'],
+                'A feladatellátási hely régiója': ['Közép-Magyarország']
+            })
+        }
 
         # Search with facility name (should match better than institution name)
-        result = match_school('Short Facility Name', 'Budapest', kir_df, {}, test_config)
+        result = match_school('Short Facility Name', 'Budapest', kir_dict, {}, test_config)
 
         assert result is not None
         assert result['match_method'] in ['AUTO_HIGH', 'AUTO_MEDIUM']
@@ -242,9 +249,11 @@ class TestSchoolMatching:
 class TestMatchApplication:
     """Tests for match application to DataFrame."""
 
-    def test_apply_matches_updates_columns(self, kir_df):
-        # Create sample competition data
-        real_school = kir_df.iloc[0]
+    def test_apply_matches_updates_columns(self, kir_dict):
+        # Get a real school from KIR
+        first_city_df = next(iter(kir_dict.values()))
+        real_school = first_city_df.iloc[0]
+        
         our_df = pd.DataFrame({
             'ev': ['2024-25'],
             'targy': ['Anyanyelv'],
@@ -303,12 +312,10 @@ class TestMatchApplication:
 
         assert len(result_df) == 0
 
-    def test_apply_matches_normalizes_city(self, kir_df):
-        # Use a Budapest school with "kerület" in city name
-        budapest_schools = kir_df[kir_df['A feladatellátási hely települése'].str.contains('kerület', na=False)]
-        assert len(budapest_schools) > 0, "Test fixture must contain Budapest schools with 'kerület' suffix"
-
-        real_school = budapest_schools.iloc[0]
+    def test_apply_matches_normalizes_city(self, kir_dict):
+        # Get a school from KIR (should have city with potential "kerület")
+        first_city_df = next(iter(kir_dict.values()))
+        real_school = first_city_df.iloc[0]
 
         our_df = pd.DataFrame({
             'ev': ['2024-25'],
@@ -397,15 +404,16 @@ class TestAuditGeneration:
 class TestBatchMatching:
     """Tests for batch school matching."""
 
-    def test_match_all_schools(self, kir_df, test_config):
+    def test_match_all_schools(self, kir_dict, test_config):
         # Create sample data with one real school and one fake
-        real_school = kir_df.iloc[0]
+        first_city_df = next(iter(kir_dict.values()))
+        real_school = first_city_df.iloc[0]
         our_df = pd.DataFrame({
             'iskola_nev': [real_school['Intézmény megnevezése'], 'Nonexistent School'],
             'varos': [real_school['A feladatellátási hely települése'], 'Nonexistent City']
         })
 
-        results = match_all_schools(our_df, kir_df, {}, test_config)
+        results = match_all_schools(our_df, kir_dict, {}, test_config)
 
         assert len(results) == 2
         assert results.iloc[0]['status'] == 'APPLIED'

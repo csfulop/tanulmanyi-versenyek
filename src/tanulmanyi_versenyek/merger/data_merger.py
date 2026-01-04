@@ -132,8 +132,8 @@ def generate_validation_report(df, cfg, duplicates_removed=0, city_corrections=N
 
 def generate_excel_report(df, cfg):
     """
-    Generate Excel report with data and summary sheets.
-    Creates summary tables instead of pivot tables for better compatibility.
+    Generate Excel report by populating template with data.
+    Template contains pivot tables that work with the populated data.
 
     Args:
         df: Master DataFrame
@@ -141,8 +141,6 @@ def generate_excel_report(df, cfg):
     """
     from pathlib import Path
     from openpyxl import load_workbook
-    from openpyxl.styles import Font
-    from openpyxl.utils import get_column_letter
     import shutil
 
     template_path = Path(cfg['paths']['template_file'])
@@ -169,36 +167,6 @@ def generate_excel_report(df, cfg):
             ws_data.cell(row=r_idx, column=c_idx, value=value)
 
     log.info(f"Wrote {len(df)} rows to Data sheet")
-
-    ws_school = wb.create_sheet("Ranking_by_School")
-    school_counts = df.groupby('iskola_nev').size().sort_values(ascending=False)
-
-    ws_school.cell(1, 1, 'iskola_nev').font = Font(bold=True)
-    ws_school.cell(1, 2, 'Count').font = Font(bold=True)
-
-    for idx, (school, count) in enumerate(school_counts.items(), start=2):
-        ws_school.cell(idx, 1, school)
-        ws_school.cell(idx, 2, count)
-
-    ws_school.column_dimensions['A'].width = 60
-    ws_school.column_dimensions['B'].width = 10
-
-    log.info(f"Created Ranking_by_School sheet with {len(school_counts)} schools")
-
-    ws_city = wb.create_sheet("Ranking_by_City")
-    city_counts = df.groupby('varos').size().sort_values(ascending=False)
-
-    ws_city.cell(1, 1, 'varos').font = Font(bold=True)
-    ws_city.cell(1, 2, 'Count').font = Font(bold=True)
-
-    for idx, (city, count) in enumerate(city_counts.items(), start=2):
-        ws_city.cell(idx, 1, city)
-        ws_city.cell(idx, 2, count)
-
-    ws_city.column_dimensions['A'].width = 40
-    ws_city.column_dimensions['B'].width = 10
-
-    log.info(f"Created Ranking_by_City sheet with {len(city_counts)} cities")
 
     wb.save(output_path)
     log.info(f"Excel report saved to {output_path}")

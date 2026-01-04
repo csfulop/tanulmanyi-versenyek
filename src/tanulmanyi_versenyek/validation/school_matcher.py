@@ -10,6 +10,14 @@ from rapidfuzz import fuzz
 
 log = logging.getLogger(__name__.split('.')[-1])
 
+REQUIRED_KIR_COLUMNS = [
+    'Intézmény megnevezése',
+    'A feladatellátási hely települése',
+    'A feladatellátási hely vármegyéje',
+    'A feladatellátási hely régiója',
+    'A feladatellátási hely megnevezése'
+]
+
 
 def _normalize_case_if_uppercase(text: str) -> str:
     """Convert FULL UPPERCASE to normal case with exceptions."""
@@ -40,8 +48,8 @@ def _normalize_case_if_uppercase(text: str) -> str:
     return ' '.join(normalized)
 
 
-def load_kir_database(config) -> pd.DataFrame:
-    """Load and validate KIR facility locations Excel file."""
+def load_kir_database(config) -> Dict[str, pd.DataFrame]:
+    """Load and validate KIR facility locations Excel file, return city-indexed dict."""
     filepath = Path(config['kir']['locations_file'])
 
     if not filepath.exists():
@@ -49,24 +57,44 @@ def load_kir_database(config) -> pd.DataFrame:
 
     kir_df = pd.read_excel(filepath)
 
-    required_columns = config['kir']['required_columns']
-    missing_columns = [col for col in required_columns if col not in kir_df.columns]
+    missing_columns = [col for col in REQUIRED_KIR_COLUMNS if col not in kir_df.columns]
 
     if missing_columns:
         raise ValueError(
             f"KIR database missing required columns.\n"
-            f"Expected: {required_columns}\n"
+            f"Expected: {REQUIRED_KIR_COLUMNS}\n"
             f"Missing: {missing_columns}\n"
             f"Found: {list(kir_df.columns)}"
         )
 
     # Normalize FULL UPPERCASE names
     kir_df['Intézmény megnevezése'] = kir_df['Intézmény megnevezése'].apply(_normalize_case_if_uppercase)
-    if 'A feladatellátási hely megnevezése' in kir_df.columns:
-        kir_df['A feladatellátási hely megnevezése'] = kir_df['A feladatellátási hely megnevezése'].apply(_normalize_case_if_uppercase)
+    kir_df['A feladatellátási hely megnevezése'] = kir_df['A feladatellátási hely megnevezése'].apply(_normalize_case_if_uppercase)
 
-    log.info(f"Loaded {len(kir_df)} schools from KIR database")
-    return kir_df
+    # Keep only required columns
+    kir_df = kir_df[REQUIRED_KIR_COLUMNS]
+
+    # Group by normalized city
+    kir_df['_normalized_city'] = kir_df['A feladatellátási hely települése'].apply(normalize_city)
+    
+    kir_dict = {}
+    for city, group in kir_df.groupby('_normalized_city'):
+        kir_dict[city] = group.drop(columns=['_normalized_city']).reset_index(drop=True)
+    
+    # Create special "budapest" entry by merging all Budapest districts
+    budapest_dfs = []
+    for city_key in list(kir_dict.keys()):
+        if city_key.startswith('budapest'):
+            budapest_dfs.append(kir_dict[city_key])
+    
+    if budapest_dfs:
+        kir_dict['budapest'] = pd.concat(budapest_dfs, ignore_index=True)
+    
+    total_schools = len(kir_df)
+    total_cities = len(kir_dict)
+    log.info(f"Loaded {total_schools} schools from {total_cities} cities in KIR database")
+    
+    return kir_dict
 
 
 def load_school_mapping(config) -> Dict[Tuple[str, str], dict]:
@@ -121,20 +149,6 @@ def normalize_city(city: str) -> str:
     return normalized
 
 
-def cities_match(our_city: str, kir_city: str) -> bool:
-    """Check if two cities match (with Budapest special case)."""
-    our_normalized = normalize_city(our_city)
-    kir_normalized = normalize_city(kir_city)
-
-    if our_normalized == kir_normalized:
-        return True
-
-    if our_normalized == "budapest" and kir_normalized.startswith("budapest"):
-        return True
-
-    return False
-
-
 def _calculate_best_match_score(our_name: str, candidate: pd.Series) -> float:
     """Calculate best fuzzy match score across both name columns."""
     scores = []
@@ -149,7 +163,7 @@ def _calculate_best_match_score(our_name: str, candidate: pd.Series) -> float:
 def match_school(
     our_name: str,
     our_city: str,
-    kir_df: pd.DataFrame,
+    kir_dict: Dict[str, pd.DataFrame],
     manual_mapping: Dict,
     config
 ) -> dict:
@@ -170,37 +184,37 @@ def match_school(
                 'comment': manual_entry['comment']
             }
 
-        kir_match = kir_df[kir_df['Intézmény megnevezése'] == corrected_name]
-        if len(kir_match) == 0:
-            log.warning(f"Manual mapping references non-existent KIR school: {corrected_name}")
-            return {
-                'matched_school_name': None,
-                'matched_city': None,
-                'matched_county': None,
-                'matched_region': None,
-                'confidence_score': None,
-                'match_method': 'NO_MATCH',
-                'comment': 'Manual mapping references non-existent KIR school'
-            }
-
-        kir_row = kir_match.iloc[0]
+        # Search for manual match across all cities
+        for city_df in kir_dict.values():
+            kir_match = city_df[city_df['Intézmény megnevezése'] == corrected_name]
+            if len(kir_match) > 0:
+                kir_row = kir_match.iloc[0]
+                return {
+                    'matched_school_name': kir_row['Intézmény megnevezése'],
+                    'matched_city': kir_row['A feladatellátási hely települése'],
+                    'matched_county': kir_row['A feladatellátási hely vármegyéje'],
+                    'matched_region': kir_row['A feladatellátási hely régiója'],
+                    'confidence_score': None,
+                    'match_method': 'MANUAL',
+                    'comment': manual_entry['comment']
+                }
+        
+        log.warning(f"Manual mapping references non-existent KIR school: {corrected_name}")
         return {
-            'matched_school_name': kir_row['Intézmény megnevezése'],
-            'matched_city': kir_row['A feladatellátási hely települése'],
-            'matched_county': kir_row['A feladatellátási hely vármegyéje'],
-            'matched_region': kir_row['A feladatellátási hely régiója'],
+            'matched_school_name': None,
+            'matched_city': None,
+            'matched_county': None,
+            'matched_region': None,
             'confidence_score': None,
-            'match_method': 'MANUAL',
-            'comment': manual_entry['comment']
+            'match_method': 'NO_MATCH',
+            'comment': 'Manual mapping references non-existent KIR school'
         }
 
-    candidates = []
-    for _, kir_row in kir_df.iterrows():
-        kir_city = kir_row['A feladatellátási hely települése']
-        if cities_match(our_city, kir_city):
-            candidates.append(kir_row)
+    # Lookup candidates by normalized city
+    normalized_city = normalize_city(our_city)
+    candidates_df = kir_dict.get(normalized_city, pd.DataFrame())
 
-    if not candidates:
+    if candidates_df.empty:
         return {
             'matched_school_name': None,
             'matched_city': None,
@@ -214,7 +228,7 @@ def match_school(
     best_match = None
     best_score = 0
 
-    for candidate in candidates:
+    for _, candidate in candidates_df.iterrows():
         score = _calculate_best_match_score(our_name, candidate)
         if score > best_score:
             best_score = score
@@ -249,11 +263,21 @@ def match_school(
 
 def match_all_schools(
     our_df: pd.DataFrame,
-    kir_df: pd.DataFrame,
+    kir_dict: Dict[str, pd.DataFrame],
     manual_mapping: Dict,
     config
 ) -> pd.DataFrame:
     """Match all unique schools in competition data to KIR."""
+    # Collect unique normalized cities from competition data
+    unique_cities = set(our_df['varos'].apply(normalize_city).unique())
+    
+    # Filter KIR dict to only cities in competition data
+    original_city_count = len(kir_dict)
+    filtered_kir_dict = {city: df for city, df in kir_dict.items() if city in unique_cities}
+    filtered_city_count = len(filtered_kir_dict)
+    
+    log.info(f"Filtered KIR to {filtered_city_count} cities (from {original_city_count} total)")
+    
     unique_schools = our_df[['iskola_nev', 'varos']].drop_duplicates()
 
     results = []
@@ -261,7 +285,7 @@ def match_all_schools(
         school_name = row['iskola_nev']
         city = row['varos']
 
-        match_result = match_school(school_name, city, kir_df, manual_mapping, config)
+        match_result = match_school(school_name, city, filtered_kir_dict, manual_mapping, config)
 
         status = 'APPLIED' if match_result['match_method'] in ['MANUAL', 'AUTO_HIGH', 'AUTO_MEDIUM'] else 'NOT_APPLIED'
 

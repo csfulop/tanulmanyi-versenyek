@@ -162,36 +162,21 @@ def test_full_pipeline_with_kir(downloaded_html, downloaded_kir_file, config, tm
     assert len(test_df) > 0, "Test DataFrame should not be empty"
     original_count = len(test_df)
 
-    # Get unique cities from test data
-    test_cities = test_df['varos'].unique()
-    
     # Load full KIR database
     temp_config = config.copy()
     temp_config['kir'] = config['kir'].copy()
     temp_config['kir']['locations_file'] = str(downloaded_kir_file)
     
-    kir_df = load_kir_database(temp_config)
-    
-    # Filter KIR to only cities in test data (for performance)
-    from tanulmanyi_versenyek.validation.school_matcher import cities_match
-    filtered_kir = []
-    for _, kir_row in kir_df.iterrows():
-        kir_city = kir_row['A feladatellátási hely települése']
-        for test_city in test_cities:
-            if cities_match(test_city, kir_city):
-                filtered_kir.append(kir_row)
-                break
-    
-    kir_df_filtered = pd.DataFrame(filtered_kir)
-    assert len(kir_df_filtered) > 0, "Should have KIR schools in test cities"
+    kir_dict = load_kir_database(temp_config)
+    assert len(kir_dict) > 0, "KIR dict should not be empty"
 
     # Apply city corrections
     city_mapping = load_city_mapping(temp_config)
     test_df, corrections_applied = apply_city_mapping(test_df, city_mapping)
 
-    # Match schools
+    # Match schools (filtering by city happens inside match_all_schools)
     school_mapping = load_school_mapping(temp_config)
-    match_results = match_all_schools(test_df, kir_df_filtered, school_mapping, temp_config)
+    match_results = match_all_schools(test_df, kir_dict, school_mapping, temp_config)
 
     # Verify match results structure
     assert 'our_school_name' in match_results.columns
