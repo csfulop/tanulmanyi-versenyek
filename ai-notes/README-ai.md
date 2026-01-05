@@ -19,11 +19,13 @@ See existing step4-coding-summary-xxx.md files for the completed steps.
 2: I review it and ask questions, give comments
 3: you fix my comments and we iterate 2-3 until I say that I am satisfied with the implementation of the given step
 4: if I don't say explicitly then you ask me for confirmation that we can finish the given step
-5: then you write a summary about the current step we have just finished (see details below)
+5: then you write a summary about the current step we have just finished. See details below "Rules for writing the step summaries" section
 6: I review the summary ask questions, give comments
 7: you fix my comments as we iterate 6-7 until I say that I am satisfied with the summary of the current step
 8: if I don't say explicitly then you ask me for confirmation that we can finish the summary
-9: we jump to the next step in the breakdown and jump back to 1
+9: after writing the summary document suggest a commit message. See below section "Commit Message Guidelines". Add the commit message as the last section to the summary document.
+10: I review the commit message, give comments
+11: we jump to the next step in the breakdown and jump back to 1
 
 Very important for me that we do the steps one-by-one.
 Maybe I say that you can implement more steps at once, but if I don't give such instruction then stick to the one-by-one workflow.
@@ -46,12 +48,13 @@ Application: How can this learning be applied to prevent or solve similar proble
 Working Practices: Document what aspects of the project's current structure or code are functioning well and should be maintained.
 Non-Working Practices: Identify any parts of the project that are problematic, inefficient, or should be refactored in the future.
 Recommendations: Provide a concise list of actionable best practices or coding standards specifically tailored for this project.
-5. Suggestion for commit message
-See "Commit Message Guidelines" section below for format and content rules.
 
 The report should be concise, clear, and actionable. Focus on technical details and practical insights. Avoid verbose descriptions. Use bullet points and code snippets where appropriate to illustrate points. The final document should be a structured, markdown output ready for use as a reference.
 
 ### Commit Message Guidelines
+
+⚠️ IMPORTANT: The commit message should NOT be a summary of the above summary ducument.
+Step back and write a concise problem/solution message following the guidelines below.
 
 A good commit message:
 - Explains the problem that was solved and why
@@ -94,7 +97,9 @@ Remember to follow our established workflow precisely:
 2. Await my review and confirmation.
 3. Create the coding summary file for the step.
 4. Await my review and confirmation of the summary.
-5. Only then can you ask to proceed to the next step.
+5. Suggest commit message
+6. Await my review and confirmation for the commit message.
+7. Only then can you ask to proceed to the next step.
 
 And also remember to follow the project specific rules.
 
