@@ -5,10 +5,12 @@
 This dataset contains 10 years of historical results from the **Bolyai Hungarian Mother Tongue Team Competition** (Bolyai Anyanyelvi Csapatverseny), one of Hungary's most prestigious elementary and high school academic competitions.
 
 **What's Inside:**
-- 3,233 competition results from 2015-16 to 2024-25
-- 766 different schools from 264 cities across Hungary
+- 3,231 competition results from 2015-16 to 2024-25
+- 613 different schools from 260 cities across Hungary
 - Team rankings for grades 3-8
 - Both written finals (Írásbeli döntő) and oral finals (Szóbeli döntő)
+- School names normalized against official Hungarian school database (KIR)
+- County (vármegye) and region (régió) data for all schools
 - Interactive Jupyter notebook for data exploration
 - Bilingual documentation (Hungarian and English)
 
@@ -18,14 +20,14 @@ The Bolyai Competition tests Hungarian language skills through team-based challe
 **Use Cases:**
 - Analyze school performance trends over time
 - Compare regional educational outcomes
-- Identify top-performing schools and cities
+- Identify top-performing schools, cities, counties and regions
 - Study competition participation patterns
 - Educational data visualization projects
 
 ## Files in This Dataset
 
 ### `master_bolyai_anyanyelv.csv`
-Complete dataset of Bolyai Mother Tongue Competition results (2015-2025). Contains 3,233 records with school names, cities, rankings, grades, and academic years. Semicolon-separated format, UTF-8 encoding. Main data file for analysis.
+Complete dataset of Bolyai Mother Tongue Competition results (2015-2025). Contains 3,231 records with school names normalized against the official Hungarian school database (KIR), cities, counties, regions, rankings, grades, and academic years. Semicolon-separated format, UTF-8 encoding. Main data file for analysis.
 
 ### `README.hu.md`
 Hungarian language documentation. Includes dataset description, data collection methodology, column definitions, usage examples, known data quality limitations, and license information. Complete reference guide in Hungarian.
@@ -40,9 +42,11 @@ Creative Commons Attribution 4.0 International (CC BY 4.0) license. Specifies te
 
 ### Sources
 
-Official Bolyai Competition website: https://magyar.bolyaiverseny.hu/verseny/archivum/eredmenyek.php
+**Competition Results:** Official Bolyai Competition website - https://magyar.bolyaiverseny.hu/verseny/archivum/eredmenyek.php
 
-Data represents official competition results published by the organizers for public access.
+**School Data:** KIR (Köznevelési Információs Rendszer) official database - https://kir.oktatas.hu/kirpub/index
+
+Data represents official competition results and school information published by the organizers for public access.
 
 ### Collection Methodology
 
@@ -52,14 +56,16 @@ Automated web scraping using Python with Playwright library for browser automati
 1. Automated navigation through competition result pages for all academic years (2015-16 to 2024-25) and grade levels (3-8)
 2. Respectful data collection with 5-second delays between requests to avoid server overload
 3. HTML table extraction and parsing into structured format
-4. Three-stage pipeline: (a) raw HTML download, (b) data extraction and normalization, (c) merging and deduplication
-5. Quality validation: automated checks for completeness and consistency
+4. School name normalization using official Hungarian school database (KIR - Köznevelési Információs Rendszer)
+5. Fuzzy matching algorithm (token_set_ratio) to match competition school names to official KIR names
+6. Four-stage pipeline: (a) raw HTML download, (b) data extraction, (c) KIR database download, (d) school matching and merging
+7. Quality validation: automated checks for completeness and consistency
 
 **Deduplication logic:** Oral finals results (final placements) take precedence over written finals results (preliminary placements) when both exist for the same team.
 
 **Output:** Semicolon-separated CSV file with UTF-8 encoding.
 
-**Collection date:** December 2025
+**Collection date:** January 2026
 
 ## Dataset Structure
 
@@ -71,15 +77,18 @@ A semicolon-separated CSV file containing all competition results.
 
 | Column | Type | Description | Example |
 |--------|------|-------------|---------|
-| `ev` | String | Academic year of the competition | "2024-25" |
+| `ev` | String | Academic year of the competition (format: "YYYY-YY") | "2024-25" |
 | `targy` | String | Subject (always "Anyanyelv" = Mother Tongue) | "Anyanyelv" |
-| `iskola_nev` | String | Name of the school | "Budapesti Kölcsey F. Gimnázium" |
-| `varos` | String | City where the school is located (includes district number for Budapest) | "Budapest III." or "Debrecen" |
-| `megye` | String | County (currently empty - not available in source) | "" |
-| `helyezes` | Integer | Final rank/placement achieved by the team | 1 |
+| `iskola_nev` | String | Official name of the school (from KIR database) | "Abádszalóki Kovács Mihály Általános Iskola" |
+| `varos` | String | City where the school is located, includes district number for Budapest (normalized from KIR) | "Budapest III." or "Debrecen" |
+| `varmegye` | String | County where the school is located (from KIR database) | "Jász-Nagykun-Szolnok" |
+| `regio` | String | Region where the school is located (from KIR database) | "Észak-Alföld" |
+| `helyezes` | Integer | Final rank/placement achieved | 1 |
 | `evfolyam` | Integer | Grade level (3-8) | 8 |
 
-**Note on `megye` column**: This column is currently empty as county information is not provided in the source data. Future versions may include this through city-to-county mapping.
+**Note on school names**: All school names have been normalized against the official Hungarian school database (KIR - Köznevelési Információs Rendszer) using fuzzy matching. This ensures consistency across years even when schools change names or have minor variations in competition records.
+
+**Note on geographic data**: County (vármegye) and region (régió) data comes from the KIR database and represents the official administrative location of each school.
 
 ## Data Collection Methodology
 
@@ -106,13 +115,20 @@ The Bolyai Competition has two rounds:
 ## Data Quality
 
 ### Completeness
-- ✅ **100% complete** for: `ev`, `targy`, `iskola_nev`, `varos`, `helyezes`, `evfolyam`
-- ⚠️ **0% complete** for: `megye` (not available in source data)
+- ✅ **100% complete** for: `ev`, `targy`, `iskola_nev`, `varos`, `varmegye`, `regio`, `helyezes`, `evfolyam`
 
 ### Accuracy
-- Data extracted directly from official competition results
+- School names normalized against official KIR database (Köznevelési Információs Rendszer)
+- Fuzzy matching algorithm with 80%+ confidence threshold
+- Manual override system for edge cases
 - Automated validation checks performed
-- Manual spot-checking of sample records
+- Comprehensive audit trail of all matching decisions
+
+### School Name Normalization
+- **Automated matching**: 724 schools (93%) matched automatically with high confidence (≥90%)
+- **Manual overrides**: 54 schools (7%) matched via manual mapping file
+- **Dropped schools**: 1 school dropped (not found in KIR database, closed)
+- **Audit file**: Complete record of all matching decisions available in source repository
 
 ### Deduplication
 - Teams appearing in both written and oral finals are deduplicated
@@ -132,11 +148,12 @@ This dataset can be used for:
 
 ## Limitations
 
-1. **County data unavailable**: The `megye` column is empty as this information is not provided in the source data
-2. **No student names**: For privacy reasons, individual student names are not included
-3. **Single subject only**: This dataset covers only the Mother Tongue category. Other subjects (Math, English, etc.) are not included
-4. **Incomplete historical data**: Only results from 2015-16 onwards are available
-5. **Grade subcategories**: Grades 7-8 have subcategories (elementary vs. gymnasium) which are normalized to base grade numbers
+1. **No student names**: For privacy reasons, individual student names are not included
+2. **Single subject only**: This dataset covers only the Mother Tongue category. Other subjects (Math, English, etc.) are not included
+3. **Incomplete historical data**: Only results from 2015-16 onwards are available
+4. **Grade subcategories**: Grades 7-8 have subcategories (elementary vs. gymnasium) which are normalized to base grade numbers
+5. **School name variations**: Historical name changes are not tracked - schools appear with their current official name from KIR database
+6. **Closed schools**: Schools not found in the current KIR database are excluded from the dataset
 
 ## Privacy & Ethics
 
@@ -159,11 +176,10 @@ License: CC BY 4.0
 
 ## Updates & Maintenance
 
-- **Current version**: 0.1.0 (MVP)
-- **Last updated**: December 20, 2025
+- **Current version**: 0.4.0
+- **Last updated**: January 5, 2026
 - **Update frequency**: Planned annual updates after each competition year
 - **Future enhancements**: 
-  - County data enrichment
   - Additional subjects (Math, English, etc.)
   - Other Hungarian academic competitions (OKTV, Zrínyi Ilona)
 
@@ -181,53 +197,49 @@ An analysis Jupyter notebook with interactive exploration examples is available 
 
 ## Data Cleaning Process
 
+### School Name Normalization
+
+All school names in this dataset have been normalized against the official Hungarian school database (KIR - Köznevelési Információs Rendszer):
+
+- **Automated matching**: Fuzzy string matching algorithm (token_set_ratio) matches competition school names to official KIR names
+- **Confidence thresholds**: 
+  - High confidence (≥90%): Automatically applied (661 schools, 85%)
+  - Medium confidence (≥80%): Automatically applied (63 schools, 8%)
+  - Low confidence (<80%): Dropped from dataset (0 schools)
+- **Manual overrides**: 54 schools (7%) matched via manual mapping file for edge cases
+- **Manual drops**: 1 school (0.1%) manually excluded (not in KIR, closed)
+- **Geographic data**: County and region information extracted from KIR database
+
+The normalization process ensures consistency across years even when schools change names or have minor variations in competition records.
+
 ### City Name Normalization
 
-The dataset includes manual city name cleaning to address variations in the source data:
+City names are normalized as part of the school matching process:
 
-- **Case normalization**: "MISKOLC" → "Miskolc"
-- **Suburb mapping**: "Debrecen-Józsa" → "Debrecen"
-- **Budapest districts**: Missing districts added where identifiable (e.g., "Budapest" → "Budapest II." for specific schools)
+- **Source**: Official city names from KIR database
+- **Budapest districts**: Preserved from KIR (e.g., "Budapest III.")
+- **Preprocessing**: Simple corrections applied before matching (e.g., "Debrecen-Józsa" → "Debrecen")
 
-The cleaning process uses a manually maintained mapping file that preserves data authenticity while improving consistency. Valid variations (e.g., schools with the same name in different cities) are documented but not modified.
-
-For details on the cleaning methodology, see the project repository.
+For details on the cleaning methodology and audit trail, see the project repository.
 
 ## Known Data Quality Limitations
 
-### School and City Name Inconsistencies
+### School Name Variations
 
-This dataset contains school and city names with the following characteristics:
+**Status**: ✅ **Addressed in v0.4.0**
 
-**1. City Name Variations (Fully Addressed):**
-- All city name variations have been normalized through manual mapping
-- Examples of corrections: "MISKOLC" → "Miskolc", "Debrecen-Józsa" → "Debrecen", "Budapest" → "Budapest II."
-- Valid variations (different schools with same name in different cities) are preserved
-- **Affected schools**: 15 (9 corrected, 6 valid variations documented)
+All school names have been normalized against the official KIR database using fuzzy matching:
+- 93% of schools matched automatically with high confidence
+- 7% matched via manual mapping file
+- Schools not found in KIR database (likely closed) are excluded
 
-**2. School Name Changes (Not Yet Addressed):**
-- Schools' official names may change over time (reorganization, renaming)
-- Minor variations in spelling or abbreviations
-- Example: "Baár-Madas Református Gimnázium és Általános Iskola" vs "Baár-Madas Református Gimnázium, Általános Iskola és Kollégium"
-- **Affected school groups**: 70+
-- **Status**: Planned for future release
+**Historical name changes**: Schools appear with their current official name from the KIR database. Historical name variations are not tracked in this version.
 
-**Impact on Rankings:**
-- City name variations have been fully addressed through cleaning
-- School name variations still cause the same school to appear multiple times in rankings
-- Rankings thus provide a **lower bound estimate** of schools' performance
-- Actual rankings may be higher if all school name variations were consolidated
+### City Name Variations
 
-**Why School Names Aren't Fixed Yet:**
-- More complex than city names (70+ variations vs 15)
-- Requires careful research of official school names
-- Planned for future release after city cleaning is stable
+**Status**: ✅ **Addressed in v0.4.0**
 
-**Recommendations for Users:**
-- City names are now fully consistent and reliable
-- Use partial name search to find schools (school names still have variations)
-- Be aware that school rankings are conservative estimates
-- Check all name variations of a school for complete results
+All city names have been normalized through the KIR database matching process. City names are consistent and reliable.
 
 ## License
 

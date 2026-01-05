@@ -1,4 +1,4 @@
-# Task: Update Release Notes for v[VERSION] = v0.3.0
+# Task: Update Release Notes for v[VERSION]
 
 You are updating the **user-facing release notes** for version [VERSION] of the Hungarian Academic Competition Results Pipeline project.
 

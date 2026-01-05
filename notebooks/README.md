@@ -13,7 +13,9 @@ Interactive analysis notebook with the following features:
 **Rankings:**
 - School rankings (count-based and weighted scoring)
 - City rankings (count-based and weighted scoring)
-- Configurable filters (grade, year, top-X threshold)
+- County rankings (count-based and weighted scoring)
+- Region rankings (count-based and weighted scoring)
+- Configurable filters (grade, year, city, county, region, top-X threshold)
 
 **Search:**
 - Search for specific schools by partial name
@@ -138,7 +140,13 @@ The notebook has configurable parameters at the top of each analysis section:
   - Options: "all", single grade (e.g., 8), or list (e.g., [7, 8])
 - `YEAR_FILTER`: Filter by year(s) (default: "all")
   - Options: "all", single year (e.g., "2023-24"), or list (e.g., ["2023-24", "2024-25"])
-- `DISPLAY_TOP_N`: Number of results to show (default: 50)
+- `CITY_FILTER`: Filter by city/cities (default: "all")
+  - Options: "all", single city (e.g., "Budapest III."), or list
+- `COUNTY_FILTER`: Filter by county/counties (default: "all")
+  - Options: "all", single county (e.g., "Pest"), or list
+- `REGION_FILTER`: Filter by region(s) (default: "all")
+  - Options: "all", single region (e.g., "Közép-Magyarország"), or list
+- `DISPLAY_TOP_N`: Number of results to show (default: 50 for schools/cities, 20 for counties, 10 for regions)
 - `SCHOOL_SEARCH`: Partial school name for search (default: "")
 
 ### Example Configurations
@@ -164,6 +172,20 @@ GRADE_FILTER = [7, 8]
 YEAR_FILTER = "2024-25"
 ```
 
+**Budapest schools only:**
+```python
+TOP_X = 10
+CITY_FILTER = ["Budapest II.", "Budapest III.", "Budapest V."]
+YEAR_FILTER = "all"
+```
+
+**Specific county analysis:**
+```python
+TOP_X = 10
+COUNTY_FILTER = "Pest"
+YEAR_FILTER = "all"
+```
+
 ### Modifying Code
 
 All helper functions are defined in the "Helper Functions" section. You can:
@@ -180,9 +202,10 @@ The notebook expects a CSV file with these columns:
 |--------|------|-------------|
 | ev | string | Academic year (e.g., "2023-24") |
 | targy | string | Subject (always "Anyanyelv") |
-| iskola_nev | string | School name |
-| varos | string | City |
-| megye | string | County (empty in current version) |
+| iskola_nev | string | School name (normalized from KIR database) |
+| varos | string | City (normalized from KIR database) |
+| varmegye | string | County (from KIR database) |
+| regio | string | Region (from KIR database) |
 | helyezes | integer | Final rank/placement |
 | evfolyam | integer | Grade level (3-8) |
 

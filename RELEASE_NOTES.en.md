@@ -4,6 +4,58 @@ This document contains user-facing release notes for the Hungarian Academic Comp
 
 ---
 
+## Version 0.4.0 - School Name Normalization (January 5, 2026)
+
+### Summary
+Normalizes all school names against the official Hungarian school database (KIR), adds county and region data, and dramatically improves data quality. School names are now consistent across years, and geographic analysis by county and region is now possible.
+
+### What's New
+- **Automated school name normalization**: All school names are matched against the official KIR (Köznevelési Információs Rendszer) database using fuzzy matching. Schools that changed names over time now appear under their current official name, making rankings accurate and consistent.
+- **County and region data**: Every school now has county (vármegye) and region (régió) information from the KIR database. You can now analyze competition results by geographic region and compare educational outcomes across Hungary.
+- **County and region rankings**: The analysis notebook now includes county and region rankings (both count-based and weighted), allowing you to see which areas of Hungary perform best in the competition.
+- **Comprehensive audit trail**: Every school matching decision is documented in an audit file showing confidence scores, match methods (automatic vs manual), and explanations. Full transparency into data quality improvements.
+- **Manual override system**: Edge cases and low-confidence matches can be manually corrected via a simple CSV mapping file, giving you control over data quality.
+
+### Improvements
+- **Consistent school names**: 724 schools (93%) automatically matched with high confidence. School name variations like "AMI" vs "Alapfokú Művészeti Iskola" are now unified under official names.
+- **Better city names**: City names are normalized from KIR (e.g., "Budapest III. kerület" → "Budapest III."), ensuring consistency with official administrative boundaries.
+- **Enhanced filtering**: School and city rankings now support filtering by county and region in addition to existing filters (year, grade, city).
+- **50x faster processing**: School matching optimized from 9 minutes to 10 seconds using city-indexed lookups and pre-filtering. Total pipeline time reduced from ~24 minutes to ~15 minutes.
+
+### Data Quality
+- **School name consolidation**: 779 unique school-city combinations matched to 613 official schools. Schools that appeared under multiple names are now unified, providing accurate performance tracking.
+- **Geographic data complete**: 100% of schools now have county and region information (previously 0%). All data sourced from official government database.
+- **High matching confidence**: 93% of schools matched automatically with ≥90% confidence. 7% matched via manual mapping file for edge cases. Zero schools with low confidence kept in dataset.
+- **Closed schools excluded**: 1 school not found in KIR database (closed) was excluded from the dataset, ensuring only active schools are included.
+
+### Breaking Changes
+- **Schema change**: Column `megye` (empty) removed. New columns `varmegye` (county) and `regio` (region) added. If you have code that references the `megye` column, update it to use `varmegye`.
+- **Script renumbering**: Step 03 is now KIR database download. Previous step 03 (merger) is now step 04. Update any automation scripts accordingly.
+- **Statistics changed**: Dataset now has 3,231 records (down from 3,233), 613 schools (down from 766), 260 cities (down from 261). This is due to school name consolidation and exclusion of closed schools.
+
+### Known Limitations
+- **Historical name changes not tracked**: Schools appear with their current official name from KIR. If a school changed names in 2020, all historical results show the new name.
+- **Closed schools excluded**: Schools not in the current KIR database are excluded. This may affect historical analysis if schools closed between competition years.
+- **Manual mapping maintenance**: The manual school mapping file requires periodic review as schools change names or close.
+
+### Upgrade Instructions
+1. Pull latest code: `git pull`
+2. Install dependencies: `poetry install` (adds rapidfuzz, beautifulsoup4)
+3. Download KIR database: `poetry run python 03_download_helper_data.py`
+4. Re-run pipeline: `poetry run python 04_merger_and_excel.py`
+
+### Metrics
+- Total records: 3,231 (down from 3,233)
+- Unique schools: 613 (down from 766 after name consolidation)
+- Cities: 260 (down from 261)
+- Schools matched automatically (high confidence): 661 (85%)
+- Schools matched automatically (medium confidence): 63 (8%)
+- Schools matched manually: 54 (7%)
+- Schools excluded: 1 (0.1%)
+- Tests passing: 100/100
+
+---
+
 ## Version 0.3.0 - Data Quality & Usability (December 26, 2025)
 
 ### Summary

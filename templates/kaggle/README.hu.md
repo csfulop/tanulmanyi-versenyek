@@ -5,10 +5,12 @@
 Ez az adathalmaz a **Bolyai Anyanyelvi Csapatverseny** 10 évnyi történelmi eredményét tartalmazza, amely Magyarország egyik legrangosabb általános és középiskolai tanulmányi versenye.
 
 **Mit tartalmaz:**
-- 3233 versenyeredmény a 2015-16-os és 2024-25-ös tanévek között
-- 766 különböző iskola 264 városból Magyarország-szerte
+- 3231 versenyeredmény a 2015-16-os és 2024-25-ös tanévek között
+- 613 különböző iskola 260 városból Magyarország-szerte
 - Csapat helyezések 3-8. osztályos kategóriákban
 - Írásbeli döntő és szóbeli döntő eredményei
+- Iskolanevek normalizálva a hivatalos magyar iskolaadatbázis (KIR) alapján
+- Vármegye és régió adatok minden iskolához
 - Interaktív Jupyter notebook az adatok feltárásához
 - Kétnyelvű dokumentáció (magyar és angol)
 
@@ -18,14 +20,14 @@ A Bolyai Verseny a magyar nyelvi készségeket teszteli csapatmunka alapú felad
 **Felhasználási lehetőségek:**
 - Iskolák teljesítményének elemzése időben
 - Regionális oktatási eredmények összehasonlítása
-- Legjobban teljesítő iskolák és városok azonosítása
+- Legjobban teljesítő iskolák, városok, vármegyés és régiók azonosítása
 - Verseny részvételi minták tanulmányozása
 - Oktatási adatvizualizációs projektek
 
 ## Fájlok az adathalmazban
 
 ### `master_bolyai_anyanyelv.csv`
-A Bolyai Anyanyelvi Csapatverseny teljes eredményhalmaza (2015-2025). 3233 rekordot tartalmaz iskolanevekkel, városokkal, helyezésekkel, évfolyamokkal és tanévekkel. Pontosvesszővel elválasztott formátum, UTF-8 kódolás. Fő adatfájl az elemzéshez.
+A Bolyai Anyanyelvi Csapatverseny teljes eredményhalmaza (2015-2025). 3231 rekordot tartalmaz a hivatalos magyar iskolaadatbázis (KIR) alapján normalizált iskolanevekkel, városokkal, vármegyékkel, régiókkal, helyezésekkel, évfolyamokkal és tanévekkel. Pontosvesszővel elválasztott formátum, UTF-8 kódolás. Fő adatfájl az elemzéshez.
 
 ### `README.hu.md`
 Magyar nyelvű dokumentáció. Tartalmazza az adathalmaz leírását, adatgyűjtési módszertant, oszlopdefiníciókat, használati példákat, ismert adatminőségi korlátozásokat és licencinformációkat. Teljes referencia útmutató magyarul.
@@ -40,9 +42,11 @@ Creative Commons Nevezd meg! 4.0 Nemzetközi (CC BY 4.0) licenc. Meghatározza a
 
 ### Források
 
-A Bolyai Verseny hivatalos weboldala: https://magyar.bolyaiverseny.hu/verseny/archivum/eredmenyek.php
+**Versenyeredmények:** Bolyai Verseny hivatalos weboldala - https://magyar.bolyaiverseny.hu/verseny/archivum/eredmenyek.php
 
-Az adatok a szervezők által nyilvánosan közzétett hivatalos versenyeredményeket reprezentálják.
+**Iskolaadatok:** KIR (Köznevelési Információs Rendszer) hivatalos adatbázis - https://kir.oktatas.hu/kirpub/index
+
+Az adatok a szervezők által nyilvánosan közzétett hivatalos versenyeredményeket és iskolainformációkat reprezentálják.
 
 ### Gyűjtési módszertan
 
@@ -52,14 +56,16 @@ Automatizált webgyűjtés Python használatával, Playwright könyvtárral a b�
 1. Automatizált navigáció a versenyeredmény oldalakon az összes tanévre (2015-16-tól 2024-25-ig) és évfolyamra (3-8. osztály)
 2. Udvarias adatgyűjtés 5 másodperces késleltetéssel a lekérések között a szerver túlterhelésének elkerülése érdekében
 3. HTML táblázatok kinyerése és strukturált formátumba alakítása
-4. Háromfázisú feldolgozási folyamat: (a) nyers HTML letöltés, (b) adatkinyerés és normalizálás, (c) összevonás és duplikáció-szűrés
-5. Minőségellenőrzés: automatikus ellenőrzések a teljesség és konzisztencia biztosítására
+4. Iskolanevek normalizálása a hivatalos magyar iskolaadatbázis (KIR - Köznevelési Információs Rendszer) alapján
+5. Fuzzy matching algoritmus (token_set_ratio) a verseny iskolanevek és hivatalos KIR nevek párosításához
+6. Négyfázisú feldolgozási folyamat: (a) nyers HTML letöltés, (b) adatkinyerés, (c) KIR adatbázis letöltés, (d) iskolapárosítás és összevonás
+7. Minőségellenőrzés: automatikus ellenőrzések a teljesség és konzisztencia biztosítására
 
 **Duplikáció-szűrési logika:** A szóbeli döntő eredményei (végleges helyezések) elsőbbséget élveznek az írásbeli döntő eredményeivel (előzetes helyezések) szemben, ha mindkettő létezik ugyanarra a csapatra.
 
 **Kimenet:** Pontosvesszővel elválasztott CSV fájl UTF-8 kódolással.
 
-**Gyűjtés dátuma:** 2025. december
+**Gyűjtés dátuma:** 2026. január
 
 ## Adathalmaz szerkezete
 
@@ -71,15 +77,18 @@ Pontosvesszővel elválasztott CSV fájl, amely az összes versenyeredményt tar
 
 | Oszlop | Típus | Leírás | Példa |
 |--------|-------|--------|-------|
-| `ev` | Szöveg | A verseny tanéve | "2024-25" |
+| `ev` | Szöveg | A verseny tanéve (formátum: "YYYY-YY") | "2024-25" |
 | `targy` | Szöveg | Tantárgy (mindig "Anyanyelv") | "Anyanyelv" |
-| `iskola_nev` | Szöveg | Az iskola neve | "Budapesti Kölcsey F. Gimnázium" |
-| `varos` | Szöveg | Az iskola városa (Budapest esetén kerületszámmal) | "Budapest III." vagy "Debrecen" |
-| `megye` | Szöveg | Megye (jelenleg üres - nem elérhető a forrásban) | "" |
-| `helyezes` | Egész szám | A csapat végső helyezése | 1 |
+| `iskola_nev` | Szöveg | Az iskola hivatalos neve (KIR adatbázisból) | "Abádszalóki Kovács Mihály Általános Iskola" |
+| `varos` | Szöveg | Az iskola városa, Budapest esetén tartalmazza a kerületet is (KIR-ből normalizálva) | "Budapest III." vagy "Debrecen" |
+| `varmegye` | Szöveg | Az iskola vármegyéje (KIR adatbázisból) | "Jász-Nagykun-Szolnok" |
+| `regio` | Szöveg | Az iskola régiója (KIR adatbázisból) | "Észak-Alföld" |
+| `helyezes` | Egész szám | Végső helyezés | 1 |
 | `evfolyam` | Egész szám | Évfolyam (3-8) | 8 |
 
-**Megjegyzés a `megye` oszlophoz**: Ez az oszlop jelenleg üres, mivel a megyeinformáció nem szerepel a forrásadatokban. Jövőbeli verziók tartalmazhatják ezt város-megye leképezés révén.
+**Megjegyzés az iskolanevekhez**: Minden iskolanév a hivatalos magyar iskolaadatbázis (KIR - Köznevelési Információs Rendszer) alapján lett normalizálva fuzzy matching használatával. Ez biztosítja a konzisztenciát az évek között, még akkor is, ha az iskolák nevet változtatnak vagy kisebb eltérések vannak a versenyeredményekben.
+
+**Megjegyzés a földrajzi adatokhoz**: A vármegye és régió adatok a KIR adatbázisból származnak és az egyes iskolák hivatalos közigazgatási helyét reprezentálják.
 
 ## Adatgyűjtési módszertan
 
@@ -106,13 +115,20 @@ A Bolyai Verseny két fordulóból áll:
 ## Adatminőség
 
 ### Teljességi arány
-- ✅ **100% teljes**: `ev`, `targy`, `iskola_nev`, `varos`, `helyezes`, `evfolyam`
-- ⚠️ **0% teljes**: `megye` (nem elérhető a forrásadatokban)
+- ✅ **100% teljes**: `ev`, `targy`, `iskola_nev`, `varos`, `varmegye`, `regio`, `helyezes`, `evfolyam`
 
 ### Pontosság
-- Az adatok közvetlenül a hivatalos versenyeredményekből származnak
+- Iskolanevek normalizálva a hivatalos KIR adatbázis (Köznevelési Információs Rendszer) alapján
+- Fuzzy matching algoritmus 80%+ megbízhatósági küszöbbel
+- Manuális felülírási rendszer speciális esetekre
 - Automatikus validációs ellenőrzések végrehajtva
-- Mintavételek manuális ellenőrzése megtörtént
+- Átfogó audit nyomvonal minden párosítási döntésről
+
+### Iskolanév-normalizálás
+- **Automatikus párosítás**: 724 iskola (93%) automatikusan párosítva magas megbízhatósággal (≥90%)
+- **Manuális felülírások**: 54 iskola (7%) manuális mapping fájl alapján párosítva
+- **Eldobott iskolák**: 1 iskola eldobva (nem található a KIR adatbázisban, bezárt)
+- **Audit fájl**: Minden párosítási döntés teljes nyilvántartása elérhető a forráskód repository-ban
 
 ### Duplikáció-szűrés
 - Az írásbeli és szóbeli döntőben is szereplő csapatok deduplikálva
@@ -132,11 +148,12 @@ Ez az adathalmaz felhasználható:
 
 ## Korlátozások
 
-1. **Megyeadatok nem elérhetők**: A `megye` oszlop üres, mivel ez az információ nem szerepel a forrásadatokban
-2. **Nincsenek tanulónevek**: Adatvédelmi okokból az egyéni tanulónevek nem szerepelnek
-3. **Csak egy tantárgy**: Ez az adathalmaz csak az anyanyelvi kategóriát tartalmazza. Más tantárgyak (matematika, angol, stb.) nem szerepelnek
-4. **Hiányos történelmi adatok**: Csak a 2015-16-os tanévtől kezdődő eredmények érhetők el
-5. **Évfolyam alkategóriák**: A 7-8. osztálynak vannak alkategóriái (általános iskola vs. gimnázium), amelyek az alapévfolyam-számokra vannak normalizálva
+1. **Nincsenek tanulónevek**: Adatvédelmi okokból az egyéni tanulónevek nem szerepelnek
+2. **Csak egy tantárgy**: Ez az adathalmaz csak az anyanyelvi kategóriát tartalmazza. Más tantárgyak (matematika, angol, stb.) nem szerepelnek
+3. **Hiányos történelmi adatok**: Csak a 2015-16-os tanévtől kezdődő eredmények érhetők el
+4. **Évfolyam alkategóriák**: A 7-8. osztálynak vannak alkategóriái (általános iskola vs. gimnázium), amelyek az alapévfolyam-számokra vannak normalizálva
+5. **Iskolanév-változások**: Történelmi névváltozások nincsenek követve - az iskolák a KIR adatbázisból származó aktuális hivatalos nevükkel jelennek meg
+6. **Bezárt iskolák**: A jelenlegi KIR adatbázisban nem található iskolák ki vannak zárva az adathalmazból
 
 ## Adatvédelem és etika
 
@@ -159,11 +176,10 @@ Licenc: CC BY 4.0
 
 ## Frissítések és karbantartás
 
-- **Jelenlegi verzió**: 0.1.0 (MVP)
-- **Utolsó frissítés**: 2025. december 20.
+- **Jelenlegi verzió**: 0.4.0
+- **Utolsó frissítés**: 2026. január 5.
 - **Frissítési gyakoriság**: Tervezett éves frissítések minden versenyév után
 - **Jövőbeli fejlesztések**: 
-  - Megyeadatok gazdagítása
   - További tantárgyak (matematika, angol, stb.)
   - Más magyar tanulmányi versenyek (OKTV, Zrínyi Ilona)
 
@@ -181,53 +197,49 @@ Az adathalmaz mellett elérhető egy Jupyter notebook is, amely interaktív elem
 
 ## Adatminőség-javítási folyamat
 
+### Iskolanevek normalizálása
+
+Az adathalmaz minden iskolaneve a hivatalos magyar iskolaadatbázis (KIR - Köznevelési Információs Rendszer) alapján lett normalizálva:
+
+- **Automatikus párosítás**: Fuzzy string matching algoritmus (token_set_ratio) párosítja a verseny iskolaneveit a hivatalos KIR nevekkel
+- **Megbízhatósági küszöbök**: 
+  - Magas megbízhatóság (≥90%): Automatikusan alkalmazva (661 iskola, 85%)
+  - Közepes megbízhatóság (≥80%): Automatikusan alkalmazva (63 iskola, 8%)
+  - Alacsony megbízhatóság (<80%): Eldobva az adathalmazból (0 iskola)
+- **Manuális felülírások**: 54 iskola (7%) manuális mapping fájl alapján párosítva speciális esetekre
+- **Manuális eldobások**: 1 iskola (0,1%) manuálisan kizárva (nincs a KIR-ben, bezárt)
+- **Földrajzi adatok**: Vármegye és régió információk kinyerve a KIR adatbázisból
+
+A normalizálási folyamat biztosítja a konzisztenciát az évek között, még akkor is, ha az iskolák nevet változtatnak vagy kisebb eltérések vannak a versenyeredményekben.
+
 ### Városnevek normalizálása
 
-Az adathalmaz manuális városnév-tisztítást tartalmaz a forrásadatok eltéréseinek kezelésére:
+A városnevek az iskolapárosítási folyamat részeként normalizálódnak:
 
-- **Kis- és nagybetűk normalizálása**: "MISKOLC" → "Miskolc"
-- **Külterületek leképezése**: "Debrecen-Józsa" → "Debrecen"
-- **Budapesti kerületek**: Hiányzó kerületek hozzáadása, ahol azonosítható (pl. "Budapest" → "Budapest II." adott iskolák esetén)
+- **Forrás**: Hivatalos városnevek a KIR adatbázisból
+- **Budapesti kerületek**: Megőrizve a KIR-ből (pl. "Budapest III.")
+- **Előfeldolgozás**: Egyszerű javítások alkalmazva párosítás előtt (pl. "Debrecen-Józsa" → "Debrecen")
 
-A tisztítási folyamat egy manuálisan karbantartott leképezési fájlt használ, amely megőrzi az adatok hitelességét, miközben javítja a konzisztenciát. Az érvényes eltérések (pl. azonos nevű iskolák különböző városokban) dokumentálva vannak, de nem módosulnak.
-
-A tisztítási módszertan részleteiért lásd a projekt repository-ját.
+A tisztítási módszertan és audit nyomvonal részleteiért lásd a projekt repository-ját.
 
 ## Ismert adatminőségi korlátozások
 
-### Iskola- és városnevek következetlensége
+### Iskolanév-változatok
 
-Az adathalmaz az iskolák és városok neveit az alábbi jellemzőkkel tartalmazza:
+**Állapot**: ✅ **Kezelve a 0.4.0-ban**
 
-**1. Városnevek variációi (Teljesen kezelve):**
-- Minden városnév-variáció manuális leképezéssel normalizálásra került
-- Javítási példák: "MISKOLC" → "Miskolc", "Debrecen-Józsa" → "Debrecen", "Budapest" → "Budapest II."
-- Az érvényes variációk (különböző iskolák azonos névvel különböző városokban) megmaradnak
-- **Érintett iskolák száma**: 15 (9 javítva, 6 érvényes variáció dokumentálva)
+Minden iskolanév a hivatalos KIR adatbázis alapján lett normalizálva fuzzy matching használatával:
+- Az iskolák 93%-a automatikusan párosítva magas megbízhatósággal
+- 7% manuális mapping fájl alapján párosítva
+- A KIR adatbázisban nem található iskolák (valószínűleg bezártak) ki vannak zárva
 
-**2. Iskolanevek változásai (Még nem kezelve):**
-- Az iskolák hivatalos neve idővel változhat (átszervezés, névváltoztatás)
-- Kisebb eltérések az írásmódban vagy rövidítésekben
-- Példa: "Baár-Madas Református Gimnázium és Általános Iskola" vs "Baár-Madas Református Gimnázium, Általános Iskola és Kollégium"
-- **Érintett iskolacsoportok száma**: 70+
-- **Státusz**: Jövőbeli kiadásban tervezett
+**Történelmi névváltozások**: Az iskolák a KIR adatbázisból származó aktuális hivatalos nevükkel jelennek meg. A történelmi névváltozatok nincsenek követve ebben a verzióban.
 
-**Hatás a rangsorokra:**
-- A városnév-variációk teljesen kezelve lettek a tisztítás révén
-- Az iskolanév-variációk miatt ugyanaz az iskola még mindig több névváltozattal is megjelenhet a rangsorokban
-- A rangsorok így **alsó becslést** adnak az iskolák teljesítményére
-- A valós helyezések magasabbak lehetnek, ha az összes iskolanév-változatot összesítenénk
+### Városnév-változatok
 
-**Miért nincsenek még javítva az iskolanevek:**
-- Összetettebb, mint a városnevek (70+ variáció vs 15)
-- Az iskolák hivatalos neveinek gondos kutatását igényli
-- Jövőbeli kiadásban tervezett, miután a városnév-tisztítás stabil
+**Állapot**: ✅ **Kezelve a 0.4.0-ban**
 
-**Javaslat felhasználóknak:**
-- A városnevek mostantól teljesen konzisztensek és megbízhatóak
-- Használj részleges névkeresést az iskolák megtalálásához (az iskolanevek még mindig tartalmaznak variációkat)
-- Vedd figyelembe, hogy az iskolai rangsorok konzervatív becslések
-- Ellenőrizd az iskola összes névváltozatát a pontos eredményekhez
+Minden városnév a KIR adatbázis párosítási folyamatán keresztül normalizálódott. A városnevek konzisztensek és megbízhatóak.
 
 ## Licenc
 

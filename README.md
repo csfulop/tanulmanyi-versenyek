@@ -4,17 +4,18 @@
 
 A projekt célja egy átfogó elemző rendszer létrehozása, amely automatikusan letölti, feldolgozza és elemzi a magyarországi tanulmányi versenyek történelmi eredményeit.
 
-**Jelenlegi állapot**: Ez az első MVP (Minimum Viable Product) verzió, amely a **Bolyai Anyanyelvi Csapatverseny** eredményeinek feldolgozására koncentrál. A rendszer egy háromfázisú adatfeldolgozó pipeline, amely a verseny weboldaláról gyűjti be az adatokat, majd Excel formátumban készít belőlük elemzéseket.
+**Jelenlegi állapot**: Ez a **v0.4.0** verzió a **Bolyai Anyanyelvi Csapatverseny** eredményeinek feldolgozására koncentrál. A rendszer egy négyfázisú adatfeldolgozó pipeline, amely a verseny weboldaláról gyűjti be az adatokat, normalizálja az iskolaneveket a hivatalos KIR adatbázis alapján, majd Excel formátumban készít belőlük elemzéseket.
 
 A jövőben a rendszer további versenyekkel (OKTV, Zrínyi Ilona, más Bolyai tantárgyak) és interaktív vizualizációval fog bővülni.
 
 ## Mit csinál a program?
 
-A program három lépésben dolgozza fel a versenyeredményeket:
+A program négy lépésben dolgozza fel a versenyeredményeket:
 
 1. **Letöltés**: Automatikusan letölti az összes elérhető versenyév eredményeit a Bolyai verseny hivatalos weboldaláról (jelenleg csak az anyanyelvi kategória)
 2. **Feldolgozás**: Kinyeri a strukturált adatokat (iskola neve, város, helyezés, évfolyam, stb.)
-3. **Elemzés**: Összesített Excel riportot készít rangsorokkal és statisztikákkal
+3. **KIR adatbázis letöltése**: Letölti a hivatalos magyar iskolaadatbázist (KIR - Köznevelési Információs Rendszer)
+4. **Normalizálás és elemzés**: Iskolanevek normalizálása fuzzy matching algoritmussal, vármegyék és régiók hozzáadása, Excel riport készítése
 
 ## Milyen adatokat gyűjt?
 
@@ -22,8 +23,10 @@ A program az alábbi információkat gyűjti minden versenyeredményről:
 
 - **Tanév**: Melyik tanévben zajlott a verseny (pl. 2024-25)
 - **Tantárgy**: Anyanyelv (jelenleg csak ezt támogatja)
-- **Iskola neve**: A versenyző csapat iskolájának neve
-- **Város**: Az iskola városa
+- **Iskola neve**: A versenyző csapat iskolájának hivatalos neve (KIR adatbázis alapján normalizálva)
+- **Város**: Az iskola városa (KIR adatbázis alapján normalizálva)
+- **Vármegye**: Az iskola vármegyéje (KIR adatbázisból)
+- **Régió**: Az iskola régiója (KIR adatbázisból)
 - **Helyezés**: A csapat végső helyezése
 - **Évfolyam**: Melyik évfolyamon versenyeztek (3-8. osztály)
 
@@ -44,7 +47,7 @@ A program **10 év** versenyeredményét dolgozza fel:
 - Minden évfolyam (3-8. osztály)
 - Írásbeli és szóbeli döntők eredményei
 
-**Összesen**: 3233 egyedi versenyeredmény, 766 különböző iskolából, 264 városból.
+**Összesen**: 3231 egyedi versenyeredmény, 613 különböző iskolából, 260 városból (iskolanevek normalizálva a KIR adatbázis alapján).
 
 ## Hogyan használd?
 
@@ -69,7 +72,7 @@ poetry run playwright install chromium
 
 ### Futtatás
 
-A teljes pipeline futtatása három paranccsal:
+A teljes pipeline futtatása négy paranccsal:
 
 ```bash
 # 1. Eredmények letöltése a weboldalról
@@ -78,15 +81,19 @@ poetry run python 01_raw_downloader.py
 # 2. HTML fájlok feldolgozása CSV formátumba
 poetry run python 02_html_parser.py
 
-# 3. Összesítés és Excel riport készítése
-poetry run python 03_merger_and_excel.py
+# 3. KIR adatbázis letöltése (hivatalos magyar iskolaadatbázis)
+poetry run python 03_download_helper_data.py
+
+# 4. Iskolanevek normalizálása és Excel riport készítése
+poetry run python 04_merger_and_excel.py
 ```
 
 ### Eredmények
 
 A program a `data/` mappában hozza létre az eredményeket:
 
-- `master_bolyai_anyanyelv.csv` - Minden adat egy CSV fájlban
+- `master_bolyai_anyanyelv.csv` - Minden adat egy CSV fájlban (normalizált iskolanevekkel)
+- `school_matching_audit.csv` - Iskolanév-párosítások audit fájlja
 - `validation_report.json` - Adatminőségi jelentés
 - `analysis_templates/Bolyai_Analysis_Report.xlsx` - Excel elemzés
 
@@ -135,9 +142,9 @@ A program "udvarias" módon gyűjti az adatokat:
 - Nem terheli túl a szervert
 - Csak nyilvánosan elérhető adatokat gyűjt
 
-### Megye információ
+### Megye és régió információ
 
-A jelenlegi verzió **nem tartalmaz megyeadatokat**, mert ezek nem szerepelnek a forrás weboldalon. A `megye` oszlop üres marad. Jövőbeli verzióban tervezzük egy város-megye adatbázis integrálását.
+A jelenlegi verzió **tartalmazza a vármegye és régió adatokat**, amelyeket a hivatalos KIR (Köznevelési Információs Rendszer) adatbázisból nyerünk ki az iskolanevek normalizálása során.
 
 ### Duplikációkezelés
 
@@ -154,13 +161,14 @@ A program intelligensen kezeli az írásbeli és szóbeli döntők eredményeit:
 
 ```
 tanulmanyi-versenyek/
-├── 01_raw_downloader.py      # Letöltő script
-├── 02_html_parser.py          # Feldolgozó script
-├── 03_merger_and_excel.py     # Összesítő és riport készítő script
-├── config.yaml                # Konfigurációs beállítások
-├── templates/                 # Excel sablon
-├── data/                      # Generált adatok (nincs verziókezelve)
-└── src/                       # Forráskód modulok
+├── 01_raw_downloader.py       # Letöltő script
+├── 02_html_parser.py           # Feldolgozó script
+├── 03_download_helper_data.py  # KIR adatbázis letöltő script
+├── 04_merger_and_excel.py      # Összesítő és riport készítő script
+├── config.yaml                 # Konfigurációs beállítások
+├── templates/                  # Excel sablon
+├── data/                       # Generált adatok (nincs verziókezelve)
+└── src/                        # Forráskód modulok
 ```
 
 ### Tesztek futtatása
@@ -169,16 +177,27 @@ tanulmanyi-versenyek/
 poetry run pytest tests/ -v
 ```
 
-Jelenleg 16 teszt van, mind zöld. ✅
+Jelenleg 100 teszt van, mind zöld. ✅
+
+### Teljesítmény
+
+A teljes pipeline (4 lépés) futási ideje:
+- **Lépés 1**: ~10 perc (versenyeredmények letöltése a weboldalról)
+- **Lépés 2**: ~5 perc (HTML feldolgozás CSV formátumba)
+- **Lépés 3**: ~5 másodperc (KIR adatbázis letöltése)
+- **Lépés 4**: ~10 másodperc (iskolapárosítás és riport készítés)
+
+**Összesen**: ~15 perc
+
+Az iskolapárosítási algoritmus (lépés 4) optimalizált teljesítményre: city-indexed dictionary használatával O(1) keresés, pre-filtering a verseny városaira, és minimális DataFrame iterációk. A v0.4.0 optimalizálás előtt ez a lépés ~9 percet vett igénybe.
 
 ## Jövőbeli tervek
 
-A projekt MVP (Minimum Viable Product) állapotban van. Tervezett fejlesztések:
+A projekt folyamatosan fejlődik. Tervezett fejlesztések:
 
-1. **Megyeadatok hozzáadása**: Város-megye adatbázis integrálása
-2. **További versenyek**: OKTV, Zrínyi Ilona, más Bolyai tantárgyak
-3. **Részletesebb elemzések**: Évfolyam szerinti bontás, időbeli trendek
-4. **Webes felület**: Interaktív vizualizációk böngészőben
+1. **További versenyek**: OKTV, Zrínyi Ilona, más Bolyai tantárgyak
+2. **Részletesebb elemzések**: Évfolyam szerinti bontás, időbeli trendek
+3. **Webes felület**: Interaktív vizualizációk böngészőben
 
 ## Licenc
 
@@ -202,13 +221,6 @@ Kérdések, javaslatok esetén:
 
 ---
 
-**Utolsó frissítés**: 2025. december 22.
-**Verzió**: 0.2.0
+**Utolsó frissítés**: 2026. január 5.
+**Verzió**: 0.4.0
 **Lefedett adatok**: 2015-16 - 2024-25 tanévek, Bolyai Anyanyelvi Csapatverseny
-
-**Új v0.2.0-ban:**
-- Jupyter notebook interaktív adatelemzéshez
-- Iskolák és városok rangsorai (darabszám és súlyozott pontszám alapján)
-- Iskola keresés funkció
-- Dual language support (Magyar/English)
-- Helyi futtatás Poetry-vel vagy Docker-rel

@@ -4,6 +4,58 @@ Ez a dokumentum a Magyar Tanulmányi Versenyek Eredményelemző Rendszer felhasz
 
 ---
 
+## Verzió 0.4.0 - Iskolanév-normalizálás (2026. január 5.)
+
+### Összefoglaló
+Normalizálja az összes iskolanevet a hivatalos magyar iskolaadatbázis (KIR) alapján, hozzáadja a vármegye és régió adatokat, és drámaian javítja az adatminőséget. Az iskolanevek most konzisztensek az évek között, és lehetővé válik a földrajzi elemzés vármegye és régió szerint.
+
+### Újdonságok
+- **Automatikus iskolanév-normalizálás**: Minden iskolanév párosításra kerül a hivatalos KIR (Köznevelési Információs Rendszer) adatbázissal fuzzy matching használatával. Az idővel nevet változtató iskolák most az aktuális hivatalos nevükkel jelennek meg, így a rangsorok pontosak és konzisztensek.
+- **Vármegye és régió adatok**: Minden iskola most rendelkezik vármegye és régió információval a KIR adatbázisból. Elemezheted a versenyeredményeket földrajzi régió szerint és összehasonlíthatod az oktatási eredményeket Magyarország-szerte.
+- **Vármegye és régió rangsorok**: Az elemzési notebook most tartalmaz vármegye és régió rangsorokat (darabszám és súlyozott alapon), így láthatod, hogy Magyarország mely területei teljesítenek a legjobban a versenyen.
+- **Átfogó audit nyomvonal**: Minden iskolapárosítási döntés dokumentálva van egy audit fájlban, amely megmutatja a megbízhatósági pontszámokat, párosítási módszereket (automatikus vs manuális) és magyarázatokat. Teljes átláthatóság az adatminőség-javításokba.
+- **Manuális felülírási rendszer**: A speciális esetek és alacsony megbízhatóságú párosítások manuálisan javíthatók egy egyszerű CSV mapping fájl segítségével, így te irányítod az adatminőséget.
+
+### Fejlesztések
+- **Konzisztens iskolanevek**: 724 iskola (93%) automatikusan párosítva magas megbízhatósággal. Az iskolanév-változatok mint "AMI" vs "Alapfokú Művészeti Iskola" most egyesítve vannak a hivatalos nevek alatt.
+- **Jobb városnevek**: A városnevek normalizálva vannak a KIR-ből (pl. "Budapest III. kerület" → "Budapest III."), biztosítva a konzisztenciát a hivatalos közigazgatási határokkal.
+- **Továbbfejlesztett szűrés**: Az iskola és város rangsorok most támogatják a vármegye és régió szerinti szűrést a meglévő szűrők (év, évfolyam, város) mellett.
+- **50x gyorsabb feldolgozás**: Az iskolapárosítás optimalizálva 9 percről 10 másodpercre city-indexed keresés és előszűrés használatával. A teljes pipeline idő csökkent ~24 percről ~15 percre.
+
+### Adatminőség
+- **Iskolanév-konszolidáció**: 779 egyedi iskola-város kombináció párosítva 613 hivatalos iskolához. A több név alatt megjelenő iskolák most egyesítve vannak, pontos teljesítménykövetést biztosítva.
+- **Földrajzi adatok teljesek**: Az iskolák 100%-a most rendelkezik vármegye és régió információval (korábban 0%). Minden adat hivatalos kormányzati adatbázisból származik.
+- **Magas párosítási megbízhatóság**: Az iskolák 93%-a automatikusan párosítva ≥90% megbízhatósággal. 7% manuális mapping fájl alapján párosítva speciális esetekre. Nulla alacsony megbízhatóságú iskola maradt az adathalmazban.
+- **Bezárt iskolák kizárva**: 1 iskola nem található a KIR adatbázisban (bezárt) és ki lett zárva az adathalmazból, biztosítva hogy csak aktív iskolák szerepelnek.
+
+### Visszafelé nem kompatibilis változások
+- **Séma változás**: A `megye` oszlop (üres) eltávolítva. Új `varmegye` (vármegye) és `regio` (régió) oszlopok hozzáadva. Ha van kódod ami a `megye` oszlopra hivatkozik, frissítsd `varmegye`-re.
+- **Script átszámozás**: A 03-as lépés most a KIR adatbázis letöltés. A korábbi 03-as lépés (összevonás) most 04-es. Frissítsd az automatizálási scripteket ennek megfelelően.
+- **Statisztikák változtak**: Az adathalmaz most 3231 rekordot tartalmaz (3233-ról), 613 iskolát (766-ról), 260 várost (261-ről). Ez az iskolanév-konszolidáció és a bezárt iskolák kizárása miatt van.
+
+### Ismert korlátozások
+- **Történelmi névváltozások nem követettek**: Az iskolák az aktuális hivatalos nevükkel jelennek meg a KIR-ből. Ha egy iskola 2020-ban nevet változtatott, minden történelmi eredmény az új nevet mutatja.
+- **Bezárt iskolák kizárva**: A jelenlegi KIR adatbázisban nem szereplő iskolák ki vannak zárva. Ez befolyásolhatja a történelmi elemzést, ha iskolák bezártak a versenyévek között.
+- **Manuális mapping karbantartás**: A manuális iskolapárosítási fájl időszakos felülvizsgálatot igényel, ahogy az iskolák nevet változtatnak vagy bezárnak.
+
+### Frissítési útmutató
+1. Legfrissebb kód letöltése: `git pull`
+2. Függőségek telepítése: `poetry install` (hozzáadja a rapidfuzz, beautifulsoup4 csomagokat)
+3. KIR adatbázis letöltése: `poetry run python 03_download_helper_data.py`
+4. Pipeline újrafuttatása: `poetry run python 04_merger_and_excel.py`
+
+### Statisztikák
+- Összes rekord: 3231 (3233-ról)
+- Egyedi iskolák: 613 (766-ról a névkonszolidáció után)
+- Városok: 260 (261-ről)
+- Automatikusan párosított iskolák (magas megbízhatóság): 661 (85%)
+- Automatikusan párosított iskolák (közepes megbízhatóság): 63 (8%)
+- Manuálisan párosított iskolák: 54 (7%)
+- Kizárt iskolák: 1 (0,1%)
+- Sikeres tesztek: 100/100
+
+---
+
 ## Verzió 0.3.0 - Adatminőség és használhatóság (2025. december 26.)
 
 ### Összefoglaló
