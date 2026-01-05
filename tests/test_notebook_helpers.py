@@ -22,37 +22,59 @@ def hungarian_sort_key(text):
     return text.translate(HUNGARIAN_SORT_MAP)
 
 
-def filter_data(df, grade_filter, year_filter, city_filter="all"):
-    """Filter dataframe by grade, year, and city."""
-    filtered = df.copy()
+def apply_filters(df, year_filter="all", grade_filter="all", city_filter="all", county_filter="all", region_filter="all"):
+    """Apply filters to DataFrame.
     
-    # Handle grade filter
-    if grade_filter != "all":
-        grades = [grade_filter] if not isinstance(grade_filter, list) else grade_filter
-        invalid_grades = [g for g in grades if g not in [3, 4, 5, 6, 7, 8]]
-        if invalid_grades:
-            raise ValueError(f"Invalid grade(s): {invalid_grades}\nValid grades are: [3, 4, 5, 6, 7, 8]")
-        filtered = filtered[filtered['evfolyam'].isin(grades)]
+    Args:
+        df: DataFrame to filter
+        year_filter: "all" or string or list of values
+        grade_filter: "all" or int/string or list of values
+        city_filter: "all" or string or list of values
+        county_filter: "all" or string or list of values
+        region_filter: "all" or string or list of values
+        
+    Returns:
+        Filtered DataFrame
+    """
+    result = df.copy()
     
-    # Handle year filter
+    # Year filter
     if year_filter != "all":
-        years = [year_filter] if not isinstance(year_filter, list) else year_filter
-        valid_years = df['ev'].unique().tolist()
-        invalid_years = [y for y in years if y not in valid_years]
-        if invalid_years:
-            raise ValueError(f"Invalid year(s): {invalid_years}\nValid years are: {sorted(valid_years)}")
-        filtered = filtered[filtered['ev'].isin(years)]
+        if isinstance(year_filter, str):
+            result = result[result['ev'] == year_filter]
+        else:  # list
+            result = result[result['ev'].isin(year_filter)]
     
-    # Handle city filter
+    # Grade filter
+    if grade_filter != "all":
+        if isinstance(grade_filter, (int, str)):
+            result = result[result['evfolyam'] == int(grade_filter)]
+        else:  # list
+            result = result[result['evfolyam'].isin([int(g) for g in grade_filter])]
+    
+    # City filter
     if city_filter != "all":
         if isinstance(city_filter, str):
-            filtered = filtered[filtered['varos'] == city_filter]
-        elif isinstance(city_filter, list):
-            filtered = filtered[filtered['varos'].isin(city_filter)]
-        else:
-            print("⚠️ Invalid CITY_FILTER format. Using all cities.")
+            result = result[result['varos'] == city_filter]
+        else:  # list
+            result = result[result['varos'].isin(city_filter)]
     
-    return filtered
+    # County filter
+    if county_filter != "all":
+        if isinstance(county_filter, str):
+            result = result[result['varmegye'] == county_filter]
+        else:  # list
+            result = result[result['varmegye'].isin(county_filter)]
+    
+    # Region filter
+    if region_filter != "all":
+        if isinstance(region_filter, str):
+            result = result[result['regio'] == region_filter]
+        else:  # list
+            result = result[result['regio'].isin(region_filter)]
+    
+    return result
+
 
 
 def calculate_count_ranking(df, top_x, group_by):
@@ -159,95 +181,6 @@ def sample_df():
         'helyezes': [1, 2, 3, 5, 8, 1, 2, 3, 7, 10],
         'evfolyam': [3, 3, 4, 7, 8, 4, 5, 7, 8, 8]
     })
-
-
-# === TESTS FOR filter_data() ===
-
-def test_filter_data_all(sample_df):
-    """Test filtering with 'all' for both parameters."""
-    result = filter_data(sample_df, "all", "all")
-    assert len(result) == len(sample_df)
-
-
-def test_filter_data_single_grade(sample_df):
-    """Test filtering by single grade."""
-    result = filter_data(sample_df, 8, "all")
-    assert len(result) == 3
-    assert all(result['evfolyam'] == 8)
-
-
-def test_filter_data_multiple_grades(sample_df):
-    """Test filtering by multiple grades."""
-    result = filter_data(sample_df, [7, 8], "all")
-    assert len(result) == 5
-
-
-def test_filter_data_single_year(sample_df):
-    """Test filtering by single year."""
-    result = filter_data(sample_df, "all", "2023-24")
-    assert len(result) == 5
-    assert all(result['ev'] == '2023-24')
-
-
-def test_filter_data_multiple_years(sample_df):
-    """Test filtering by multiple years."""
-    result = filter_data(sample_df, "all", ["2023-24", "2024-25"])
-    assert len(result) == 10
-
-
-def test_filter_data_combined(sample_df):
-    """Test filtering by both grade and year."""
-    result = filter_data(sample_df, 8, "2023-24")
-    assert len(result) == 1
-
-
-def test_filter_data_invalid_grade(sample_df):
-    """Test that invalid grade raises ValueError."""
-    with pytest.raises(ValueError, match="Invalid grade"):
-        filter_data(sample_df, 9, "all")
-
-
-def test_filter_data_invalid_year(sample_df):
-    """Test that invalid year raises ValueError."""
-    with pytest.raises(ValueError, match="Invalid year"):
-        filter_data(sample_df, "all", "2030-31")
-
-
-def test_filter_data_single_city(sample_df):
-    """Test filtering by single city."""
-    result = filter_data(sample_df, "all", "all", "Budapest III.")
-    assert len(result) == 3
-    assert all(result['varos'] == "Budapest III.")
-
-
-def test_filter_data_multiple_cities(sample_df):
-    """Test filtering by multiple cities."""
-    result = filter_data(sample_df, "all", "all", ["Budapest III.", "Veszprém"])
-    assert len(result) == 5
-    assert set(result['varos'].unique()) == {"Budapest III.", "Veszprém"}
-
-
-def test_filter_data_city_default_all(sample_df):
-    """Test that city filter defaults to 'all'."""
-    result = filter_data(sample_df, "all", "all")
-    assert len(result) == len(sample_df)
-
-
-def test_filter_data_combined_with_city(sample_df):
-    """Test filtering by grade, year, and city together."""
-    # Budapest III. has 3 entries: grade 3 (2023-24), grade 7 (2023-24), grade 4 (2024-25)
-    # Filtering by grade 7 + year 2023-24 + city Budapest III. should give exactly 1 result
-    result = filter_data(sample_df, 7, "2023-24", "Budapest III.")
-    assert len(result) == 1
-    assert result.iloc[0]['evfolyam'] == 7
-    assert result.iloc[0]['ev'] == "2023-24"
-    assert result.iloc[0]['varos'] == "Budapest III."
-
-
-def test_filter_data_city_no_match(sample_df):
-    """Test filtering by city with no matches."""
-    result = filter_data(sample_df, "all", "all", "NonExistentCity")
-    assert len(result) == 0
 
 
 # === TESTS FOR calculate_count_ranking() ===
@@ -545,3 +478,111 @@ def test_weighted_ranking_hungarian_alphabetical_order():
     assert result.iloc[1]['iskola_nev'] == 'Pápa Gimnázium'
     assert result.iloc[2]['iskola_nev'] == 'Pécel Gimnázium'
     assert result.iloc[3]['iskola_nev'] == 'Pécs Gimnázium'
+
+
+# === TESTS FOR apply_filters() ===
+
+@pytest.fixture
+def sample_df_with_county_region():
+    """Create a sample dataframe with county and region data."""
+    return pd.DataFrame({
+        'ev': ['2023-24'] * 5 + ['2024-25'] * 5,
+        'targy': ['Anyanyelv'] * 10,
+        'iskola_nev': ['School A'] * 10,
+        'varos': ['Budapest', 'Debrecen', 'Pécs', 'Győr', 'Szeged'] * 2,
+        'varmegye': ['Budapest', 'Hajdú-Bihar', 'Baranya', 'Győr-Moson-Sopron', 'Csongrád-Csanád'] * 2,
+        'regio': ['Közép-Magyarország', 'Észak-Alföld', 'Dél-Dunántúl', 'Nyugat-Dunántúl', 'Dél-Alföld'] * 2,
+        'helyezes': [1, 2, 3, 4, 5] * 2,
+        'evfolyam': [3, 4, 5, 6, 7, 3, 4, 5, 6, 7]
+    })
+
+
+def test_apply_filters_all(sample_df_with_county_region):
+    """Test apply_filters with all filters set to 'all'."""
+    result = apply_filters(sample_df_with_county_region)
+    assert len(result) == len(sample_df_with_county_region)
+
+
+def test_apply_filters_year_string(sample_df_with_county_region):
+    """Test apply_filters with single year string."""
+    result = apply_filters(sample_df_with_county_region, year_filter="2023-24")
+    assert len(result) == 5
+    assert all(result['ev'] == '2023-24')
+
+
+def test_apply_filters_year_list(sample_df_with_county_region):
+    """Test apply_filters with year list."""
+    result = apply_filters(sample_df_with_county_region, year_filter=["2023-24", "2024-25"])
+    assert len(result) == 10
+
+
+def test_apply_filters_grade_int(sample_df_with_county_region):
+    """Test apply_filters with single grade as int."""
+    result = apply_filters(sample_df_with_county_region, grade_filter=3)
+    assert len(result) == 2
+    assert all(result['evfolyam'] == 3)
+
+
+def test_apply_filters_grade_list(sample_df_with_county_region):
+    """Test apply_filters with grade list."""
+    result = apply_filters(sample_df_with_county_region, grade_filter=[3, 4])
+    assert len(result) == 4
+
+
+def test_apply_filters_city_string(sample_df_with_county_region):
+    """Test apply_filters with single city string."""
+    result = apply_filters(sample_df_with_county_region, city_filter="Budapest")
+    assert len(result) == 2
+    assert all(result['varos'] == "Budapest")
+
+
+def test_apply_filters_city_list(sample_df_with_county_region):
+    """Test apply_filters with city list."""
+    result = apply_filters(sample_df_with_county_region, city_filter=["Budapest", "Debrecen"])
+    assert len(result) == 4
+
+
+def test_apply_filters_county_string(sample_df_with_county_region):
+    """Test apply_filters with single county string."""
+    result = apply_filters(sample_df_with_county_region, county_filter="Hajdú-Bihar")
+    assert len(result) == 2
+    assert all(result['varmegye'] == "Hajdú-Bihar")
+
+
+def test_apply_filters_county_list(sample_df_with_county_region):
+    """Test apply_filters with county list."""
+    result = apply_filters(sample_df_with_county_region, county_filter=["Budapest", "Baranya"])
+    assert len(result) == 4
+
+
+def test_apply_filters_region_string(sample_df_with_county_region):
+    """Test apply_filters with single region string."""
+    result = apply_filters(sample_df_with_county_region, region_filter="Észak-Alföld")
+    assert len(result) == 2
+    assert all(result['regio'] == "Észak-Alföld")
+
+
+def test_apply_filters_region_list(sample_df_with_county_region):
+    """Test apply_filters with region list."""
+    result = apply_filters(sample_df_with_county_region, region_filter=["Közép-Magyarország", "Dél-Alföld"])
+    assert len(result) == 4
+
+
+def test_apply_filters_combined(sample_df_with_county_region):
+    """Test apply_filters with multiple filters combined."""
+    result = apply_filters(
+        sample_df_with_county_region,
+        year_filter="2023-24",
+        grade_filter=3,
+        county_filter="Budapest"
+    )
+    assert len(result) == 1
+    assert result.iloc[0]['ev'] == "2023-24"
+    assert result.iloc[0]['evfolyam'] == 3
+    assert result.iloc[0]['varmegye'] == "Budapest"
+
+
+def test_apply_filters_no_match(sample_df_with_county_region):
+    """Test apply_filters with filters that match nothing."""
+    result = apply_filters(sample_df_with_county_region, county_filter="NonExistentCounty")
+    assert len(result) == 0
